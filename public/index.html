@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberDoc Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root { 
+            --bg-main: #131314; --bg-side: #1e1f20; --text: #e3e3e3; 
+            --accent: #4285f4; --border: #3c4043; --hover: #2d2f31;
+            --danger: #ff4444; --success: #00c851;
+        }
+
+        /* Тот самый ползунок справа */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: #3c4043; border-radius: 10px; border: 2px solid var(--bg-main); }
+        ::-webkit-scrollbar-thumb:hover { background: #5f6368; }
+
+        body { font-family: 'Google Sans', sans-serif; background: var(--bg-main); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar - классический вид */
+        #sidebar { width: 280px; background: var(--bg-side); border-right: 1px solid var(--border); display: flex; flex-direction: column; shrink: 0; }
+        .nav-tabs { display: flex; border-bottom: 1px solid var(--border); }
+        .nav-tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-size: 14px; color: #8e918f; transition: 0.2s; }
+        .nav-tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); background: #232425; }
+
+        .sidebar-content { flex: 1; display: flex; flex-direction: column; padding: 15px; overflow-y: auto; }
+        #chat-section, #tools-sidebar { display: none; height: 100%; flex-direction: column; }
+        #chat-section.active, #tools-sidebar.active { display: flex; }
+
+        .new-chat-btn { background: #28292a; border-radius: 50px; padding: 12px; text-align: center; cursor: pointer; margin-bottom: 20px; font-weight: 500; border: 1px solid var(--border); }
+        
+        #chat-list, #tools-menu { flex: 1; overflow-y: auto; }
+        .item { position: relative; padding: 12px 15px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; font-size: 14px; transition: 0.2s; }
+        .item:hover { background: var(--hover); }
+        .item.active { background: #333537; color: var(--accent); font-weight: 500; }
+        .delete-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0; color: #8e918f; font-size: 18px; }
+        .item:hover .delete-btn { opacity: 1; }
+
+        /* Workspace */
+        #main-container { flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        .view-section { display: none; flex: 1; flex-direction: column; height: 100%; }
+        .view-section.active { display: flex; }
+
+        /* Chat View */
+        #chat-window { flex: 1; overflow-y: auto; padding: 40px 15% 160px 15%; scroll-behavior: smooth; }
+        .msg { margin-bottom: 40px; display: flex; gap: 20px; animation: fadeIn 0.3s ease; }
+        .msg.user { justify-content: flex-end; }
+        .content { line-height: 1.6; font-size: 16px; max-width: 100%; }
+        .msg.user .content { background: #2d2f31; padding: 12px 24px; border-radius: 24px; max-width: 85%; white-space: pre-wrap; }
+        .msg.ai .avatar { width: 32px; height: 32px; background: linear-gradient(45deg, #4285f4, #9b72cb); border-radius: 50%; shrink: 0; }
+        
+        .input-area { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 15% 40px 15%; background: linear-gradient(transparent, var(--bg-main) 40%); }
+        .input-box { background: #1e1f20; border-radius: 28px; padding: 10px 24px; display: flex; align-items: flex-end; border: 1px solid var(--border); }
+        textarea { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 16px; padding: 8px 0; resize: none; max-height: 200px; }
+
+        /* Tools View - сохраняем стилистику */
+        #tools-workspace { flex: 1; overflow-y: auto; padding: 40px 15%; display: flex; flex-direction: column; }
+        .tool-header { margin-bottom: 30px; }
+        .tool-form { display: flex; gap: 15px; margin-bottom: 30px; }
+        .tool-input { flex: 1; background: #1e1f20; border: 1px solid var(--border); border-radius: 12px; color: white; padding: 15px; font-size: 16px; outline: none; }
+        .tool-btn { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 0 30px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .tool-btn:hover { opacity: 0.9; }
+
+        .res-box { background: #0d1117; border-radius: 12px; border: 1px solid var(--border); padding: 20px; position: relative; display: none; margin-bottom: 20px; animation: fadeIn 0.4s ease; }
+        .res-box.active { display: block; }
+        .res-box pre { margin: 0; overflow-x: auto; }
+        .res-label { font-weight: bold; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .copy-btn { position: absolute; top: 15px; right: 15px; background: #3c4043; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .typing { display: flex; gap: 4px; padding: 10px; }
+        .dot { width: 6px; height: 6px; background: #8e918f; border-radius: 50%; animation: blink 1.4s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="nav-tabs">
+        <div class="nav-tab active" id="tab-chat" onclick="switchTab('chat')">Чаты</div>
+        <div class="nav-tab" id="tab-tools" onclick="switchTab('tools')">Инструменты</div>
+    </div>
+    
+    <div class="sidebar-content">
+        <div id="chat-section" class="active">
+            <div class="new-chat-btn" onclick="createNewChat()">+ Новый чат</div>
+            <div id="chat-list"></div>
+        </div>
+        <div id="tools-sidebar">
+            <div id="tools-menu">
+                <div class="item active" onclick="selectTool('page-analyzer', this)">Page Analyzer</div>
+                <div class="item" onclick="selectTool('port-scanner', this)">Port Scanner</div>
+                <div class="item" onclick="selectTool('ssl-checker', this)">SSL Checker</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="main-container">
+    <div id="view-chat" class="view-section active">
+        <div id="chat-window"></div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="user-input" placeholder="Введите сообщение..." rows="1"></textarea>
+                <button onclick="handleSend()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:24px; padding-bottom:5px;">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-tools" class="view-section">
+        <div id="tools-workspace">
+            <div class="tool-header">
+                <h1 id="tool-title" style="margin:0; font-size: 24px;">Page Analyzer</h1>
+                <p id="tool-desc" style="color:#8e918f; font-size:14px; margin-top:5px;">Глубокое сканирование страницы на уязвимости и аудит кода.</p>
+            </div>
+
+            <div class="tool-form">
+                <input type="text" id="tool-input" class="tool-input" placeholder="Введите URL или Хост...">
+                <button class="tool-btn" onclick="executeTool()">Запустить</button>
+            </div>
+
+            <div id="box-vuln" class="res-box">
+                <div class="res-label" style="color:var(--danger)">🛡 Найденные уязвимости</div>
+                <pre><code id="out-vuln" style="color:#ff9999"></code></pre>
+            </div>
+
+            <div id="box-main" class="res-box">
+                <div class="res-label" id="main-label" style="color:var(--accent)">📄 Исходный код</div>
+                <pre><code id="out-main"></code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let chats = JSON.parse(localStorage.getItem('cyber_history')) || [];
+    let currentChatId = null;
+    let selectedTool = 'page-analyzer';
+
+    marked.setOptions({ gfm: true, breaks: true });
+
+    function switchTab(mode) {
+        document.querySelectorAll('.nav-tab, .view-section, #chat-section, #tools-sidebar').forEach(el => el.classList.remove('active'));
+        if (mode === 'chat') {
+            document.getElementById('tab-chat').classList.add('active');
+            document.getElementById('view-chat').classList.add('active');
+            document.getElementById('chat-section').classList.add('active');
+        } else {
+            document.getElementById('tab-tools').classList.add('active');
+            document.getElementById('view-tools').classList.add('active');
+            document.getElementById('tools-sidebar').classList.add('active');
+        }
+    }
+
+    function selectTool(id, el) {
+        selectedTool = id;
+        document.querySelectorAll('#tools-menu .item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('tool-title').innerText = el.innerText;
+        
+        // Сброс UI при смене инструмента
+        document.getElementById('box-vuln').classList.remove('active');
+        document.getElementById('box-main').classList.remove('active');
+        document.getElementById('main-label').innerText = id === 'page-analyzer' ? '📄 Исходный код' : '📊 Результат анализа';
+    }
+
+    async function executeTool() {
+        let val = document.getElementById('tool-input').value.trim();
+        const bV = document.getElementById('box-vuln'), oV = document.getElementById('out-vuln');
+        const bM = document.getElementById('box-main'), oM = document.getElementById('out-main');
+        const btn = document.querySelector('.tool-btn');
+
+        if (!val) return;
+
+        // --- ИСПРАВЛЕНИЕ: Очистка URL для сетевых инструментов ---
+        if (selectedTool === 'port-scanner' || selectedTool === 'ssl-checker') {
+            try {
+                // Если ввели с http/https, вырезаем хост
+                if (val.includes('://')) {
+                    val = new URL(val).hostname;
+                } else {
+                    // Если ввели просто "site.com/path", убираем путь
+                    val = val.split('/')[0];
+                }
+            } catch (e) {
+                // Оставляем как есть, если это просто IP или домен
+            }
+        }
+
+        bV.classList.remove('active');
+        bM.classList.add('active');
+        oM.textContent = "Выполняется глубокий анализ...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/tool', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ toolName: selectedTool, params: val })
+            });
+            const result = await res.json();
+            
+            if (result.success || !result.error) {
+                if (selectedTool === 'page-analyzer') {
+                    bV.classList.add('active');
+                    oV.textContent = (result.vulnerabilities && result.vulnerabilities.length > 0) 
+                        ? result.vulnerabilities.map(v => `[!] ${v}`).join('\n') 
+                        : "Уязвимостей не обнаружено.";
+                    oM.textContent = result.data;
+                    hljs.highlightElement(oM);
+                } else if (selectedTool === 'port-scanner') {
+                    oM.textContent = result.length > 0 
+                        ? result.map(p => `[${p.status}] Port ${p.port}: ${p.service}`).join('\n')
+                        : "Открытых портов не обнаружено.";
+                } else if (selectedTool === 'ssl-checker') {
+                    oM.textContent = result.error ? `Ошибка: ${result.error}` : JSON.stringify(result, null, 4);
+                }
+                attachCopyBtn(bM, oM.textContent);
+            } else {
+                oM.textContent = "Ошибка: " + (result.error || "Неизвестная ошибка сервера");
+            }
+        } catch (e) { 
+            oM.textContent = "Ошибка связи: " + e.message; 
+        } finally { 
+            btn.disabled = false; 
+        }
+    }
+
+    function attachCopyBtn(container, text) {
+        let btn = container.querySelector('.copy-btn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            container.appendChild(btn);
+        }
+        btn.innerText = 'Copy';
+        btn.onclick = () => {
+            navigator.clipboard.writeText(text);
+            btn.innerText = 'Copied!';
+            setTimeout(() => btn.innerText = 'Copy', 5000);
+        };
+    }
+
+    // Чат логика
+    const area = document.getElementById('user-input');
+    area.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+
+    async function handleSend() {
+        const text = area.value.trim();
+        if (!text) return;
+        if (!currentChatId) createNewChat();
+
+        renderMessage('user', text);
+        area.value = ''; area.style.height = 'auto';
+        
+        const loaderId = 'ld_' + Date.now();
+        document.getElementById('chat-window').insertAdjacentHTML('beforeend', `<div class="msg ai" id="${loaderId}"><div class="avatar"></div><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`);
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ message: text, sessionId: currentChatId })
+            });
+            const data = await res.json();
+            document.getElementById(loaderId).remove();
+            renderMessage('ai', data.reply);
+            
+            const chat = chats.find(c => c.id === currentChatId);
+            chat.history.push({ role: 'user', text }, { role: 'ai', text: data.reply });
+            if (chat.title === 'Новый диалог') chat.title = text.substring(0, 30);
+            saveAndRender();
+        } catch (e) { document.getElementById(loaderId)?.remove(); }
+    }
+
+    function renderMessage(role, text) {
+        const win = document.getElementById('chat-window');
+        win.insertAdjacentHTML('beforeend', `<div class="msg ${role}">${role === 'ai' ? '<div class="avatar"></div>' : ''}<div class="content">${marked.parse(text)}</div></div>`);
+        win.querySelectorAll('pre code').forEach(el => {
+            if (!el.dataset.highlighted) {
+                hljs.highlightElement(el);
+                attachCopyBtn(el.parentElement, el.innerText);
+            }
+        });
+        win.scrollTop = win.scrollHeight;
+    }
+
+    function createNewChat() {
+        currentChatId = 'sess_' + Date.now();
+        chats.unshift({ id: currentChatId, title: 'Новый диалог', history: [] });
+        saveAndRender();
+        loadChat(currentChatId);
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('cyber_history', JSON.stringify(chats));
+        const list = document.getElementById('chat-list');
+        list.innerHTML = '';
+        chats.forEach(chat => {
+            const el = document.createElement('div');
+            el.className = `item ${chat.id === currentChatId ? 'active' : ''}`;
+            el.innerHTML = `<span>${chat.title}</span><div class="delete-btn" onclick="event.stopPropagation(); deleteChat('${chat.id}')">×</div>`;
+            el.onclick = () => loadChat(chat.id);
+            list.appendChild(el);
+        });
+    }
+
+    function deleteChat(id) {
+        chats = chats.filter(c => c.id !== id);
+        if (currentChatId === id) currentChatId = null;
+        saveAndRender();
+        if (!currentChatId) document.getElementById('chat-window').innerHTML = '';
+    }
+
+    function loadChat(id) {
+        currentChatId = id;
+        const chat = chats.find(c => c.id === id);
+        document.getElementById('chat-window').innerHTML = '';
+        chat.history.forEach(m => renderMessage(m.role, m.text));
+        saveAndRender();
+    }
+
+    area.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+    saveAndRender();
+</script>
+</body>
+</html>

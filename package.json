@@ -1,0 +1,22 @@
+{
+  "name": "cyberdoc-pro",
+  "version": "2.0.0",
+  "description": "Professional Security Analysis Toolbox",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
+    "express": "^4.22.1",
+    "helmet": "^7.1.0",
+    "js-beautify": "^1.15.4",
+    "morgan": "^1.10.0",
+    "uuid": "^13.0.0",
+    "validator": "^13.11.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
