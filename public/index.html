@@ -14,7 +14,6 @@
             --danger: #ff4444; --success: #00c851;
         }
 
-        /* Тот самый ползунок справа */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-main); }
         ::-webkit-scrollbar-thumb { background: #3c4043; border-radius: 10px; border: 2px solid var(--bg-main); }
@@ -22,7 +21,6 @@
 
         body { font-family: 'Google Sans', sans-serif; background: var(--bg-main); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar - классический вид */
         #sidebar { width: 280px; background: var(--bg-side); border-right: 1px solid var(--border); display: flex; flex-direction: column; shrink: 0; }
         .nav-tabs { display: flex; border-bottom: 1px solid var(--border); }
         .nav-tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-size: 14px; color: #8e918f; transition: 0.2s; }
@@ -41,12 +39,10 @@
         .delete-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0; color: #8e918f; font-size: 18px; }
         .item:hover .delete-btn { opacity: 1; }
 
-        /* Workspace */
         #main-container { flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; }
         .view-section { display: none; flex: 1; flex-direction: column; height: 100%; }
         .view-section.active { display: flex; }
 
-        /* Chat View */
         #chat-window { flex: 1; overflow-y: auto; padding: 40px 15% 160px 15%; scroll-behavior: smooth; }
         .msg { margin-bottom: 40px; display: flex; gap: 20px; animation: fadeIn 0.3s ease; }
         .msg.user { justify-content: flex-end; }
@@ -58,7 +54,6 @@
         .input-box { background: #1e1f20; border-radius: 28px; padding: 10px 24px; display: flex; align-items: flex-end; border: 1px solid var(--border); }
         textarea { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 16px; padding: 8px 0; resize: none; max-height: 200px; }
 
-        /* Tools View - сохраняем стилистику */
         #tools-workspace { flex: 1; overflow-y: auto; padding: 40px 15%; display: flex; flex-direction: column; }
         .tool-header { margin-bottom: 30px; }
         .tool-form { display: flex; gap: 15px; margin-bottom: 30px; }
@@ -117,7 +112,7 @@
         <div id="tools-workspace">
             <div class="tool-header">
                 <h1 id="tool-title" style="margin:0; font-size: 24px;">Page Analyzer</h1>
-                <p id="tool-desc" style="color:#8e918f; font-size:14px; margin-top:5px;">Глубокое сканирование страницы на уязвимости и аудит кода.</p>
+                <p id="tool-desc" style="color:#8e918f; font-size:14px; margin-top:5px;">Сканирование страницы на уязвимости кода.</p>
             </div>
 
             <div class="tool-form">
@@ -126,12 +121,12 @@
             </div>
 
             <div id="box-vuln" class="res-box">
-                <div class="res-label" style="color:var(--danger)">🛡 Найденные уязвимости</div>
+                <div class="res-label" style="color:var(--danger)">Найденные уязвимости</div>
                 <pre><code id="out-vuln" style="color:#ff9999"></code></pre>
             </div>
 
             <div id="box-main" class="res-box">
-                <div class="res-label" id="main-label" style="color:var(--accent)">📄 Исходный код</div>
+                <div class="res-label" id="main-label" style="color:var(--accent)">Исходный код</div>
                 <pre><code id="out-main"></code></pre>
             </div>
         </div>
@@ -164,7 +159,6 @@
         el.classList.add('active');
         document.getElementById('tool-title').innerText = el.innerText;
         
-        // Сброс UI при смене инструмента
         document.getElementById('box-vuln').classList.remove('active');
         document.getElementById('box-main').classList.remove('active');
         document.getElementById('main-label').innerText = id === 'page-analyzer' ? '📄 Исходный код' : '📊 Результат анализа';
@@ -178,24 +172,20 @@
 
         if (!val) return;
 
-        // --- ИСПРАВЛЕНИЕ: Очистка URL для сетевых инструментов ---
         if (selectedTool === 'port-scanner' || selectedTool === 'ssl-checker') {
             try {
-                // Если ввели с http/https, вырезаем хост
                 if (val.includes('://')) {
                     val = new URL(val).hostname;
                 } else {
-                    // Если ввели просто "site.com/path", убираем путь
                     val = val.split('/')[0];
                 }
             } catch (e) {
-                // Оставляем как есть, если это просто IP или домен
             }
         }
 
         bV.classList.remove('active');
         bM.classList.add('active');
-        oM.textContent = "Выполняется глубокий анализ...";
+        oM.textContent = "Выполняется анализ...";
         btn.disabled = true;
 
         try {
@@ -247,7 +237,6 @@
         };
     }
 
-    // Чат логика
     const area = document.getElementById('user-input');
     area.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
 
