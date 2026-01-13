@@ -1,20 +1,16 @@
 const net = require('net');
 const tls = require('tls');
 
-/**
- * Сканер портов
- */
+
 async function scanPorts(host) {
     if (!host) return [];
     
-    // Список портов для быстрой проверки
     const ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 3306, 3389, 5432, 8080];
     const results = [];
 
     const checkPort = (port) => {
         return new Promise((resolve) => {
             const socket = new net.Socket();
-            // Увеличим таймаут до 2.5 сек для надежности
             socket.setTimeout(2500); 
 
             socket.on('connect', () => {
@@ -23,7 +19,6 @@ async function scanPorts(host) {
                 resolve();
             });
 
-            // Любая ошибка или таймаут — считаем порт закрытым/недоступным
             const finish = () => { socket.destroy(); resolve(); };
             socket.on('timeout', finish);
             socket.on('error', finish);
@@ -32,21 +27,17 @@ async function scanPorts(host) {
         });
     };
 
-    // Чтобы не "заспамить" систему, можно запускать пачками или через Promise.all
     await Promise.all(ports.map(p => checkPort(p)));
     return results.sort((a, b) => a.port - b.port);
 }
 
-/**
- * Проверка SSL сертификата
- */
 async function checkSSL(hostname) {
     return new Promise((resolve, reject) => {
         const options = {
             hostname,
             port: 443,
             method: 'GET',
-            rejectUnauthorized: false // Чтобы получить инфо даже о просроченных
+            rejectUnauthorized: false 
         };
 
         const socket = tls.connect(443, hostname, { servername: hostname }, () => {
