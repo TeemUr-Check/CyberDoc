@@ -1,12 +1,12 @@
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
-const { runTool } = require('./tools/index'); // Импорт менеджера инструментов
+const { runTool } = require('./tools/index');
 
 const app = express();
 const PORT = 3000;
 
-// Конфигурация твоего Langflow
+// Конфигурация Langflow
 const CONFIG = {
     apiUrl: 'http://127.0.0.1:7860/api/v1/run/3ab98786-bcff-49e7-a63c-902620357494',
     apiKey: 'sk-dJApwYJW0oL4BtqVKxI2PRQ2ZnJDTlsGEKnUJqHhxkM'
@@ -15,14 +15,10 @@ const CONFIG = {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-/**
- * ЭНДПОИНТ ЧАТА (Интеграция с Langflow)
- */
 app.post('/api/chat', async (req, res) => {
     try {
         const { message, sessionId } = req.body;
         
-        // Защита: если сессия не пришла, создаем временную
         const activeSession = sessionId || `temp_${Date.now()}`;
         
         console.log(`[LOG] Отправка: "${message.substring(0, 30)}..." | Session: ${activeSession}`);
@@ -41,7 +37,6 @@ app.post('/api/chat', async (req, res) => {
             timeout: 20000 
         });
 
-        // ГЛУБОКОЕ ИЗВЛЕЧЕНИЕ ТЕКСТА (твоя логика из Langflow 1.0+)
         const resultData = response.data?.outputs?.[0]?.outputs?.[0]?.results;
         
         const reply = resultData?.message?.text || 
@@ -62,9 +57,6 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
-/**
- * ЭНДПОИНТ ИНСТРУМЕНТОВ (Модульная архитектура)
- */
 app.post('/api/tool', async (req, res) => {
     const { toolName, params } = req.body;
     
@@ -73,7 +65,6 @@ app.post('/api/tool', async (req, res) => {
     }
 
     try {
-        // Вызываем логику из папки tools через менеджер
         const result = await runTool(toolName, params);
         res.json(result);
     } catch (error) {
@@ -85,5 +76,4 @@ app.post('/api/tool', async (req, res) => {
     }
 });
 
-// Запуск без endl (как ты просил)
 app.listen(PORT, () => process.stdout.write(`CyberDoc Pro: http://localhost:${PORT}`));
