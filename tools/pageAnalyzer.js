@@ -9,7 +9,6 @@ async function analyze(url) {
             data: ""
         };
 
-        // 1. Основной запрос для получения кода и заголовков
         const response = await axios.get(url, {
             timeout: 10000,
             headers: { 'User-Agent': 'CyberDoc-Scanner/2.0' }
@@ -18,7 +17,6 @@ async function analyze(url) {
         const $ = cheerio.load(response.data);
         const headers = response.headers;
 
-        // --- АКТИВНЫЙ ТЕСТ: Проверка на Open Redirect ---
         try {
             const redirectTest = await axios.get(`${url}/?url=https://evil.com`, { maxRedirects: 0, validateStatus: null });
             if (redirectTest.status === 301 || redirectTest.status === 302) {
@@ -26,7 +24,6 @@ async function analyze(url) {
             }
         } catch (e) {}
 
-        // --- АКТИВНЫЙ ТЕСТ: Проверка на XSS в параметрах (Фаззинг) ---
         const xssPayload = "<script>alert(1)</script>";
         try {
             const xssTest = await axios.get(`${url}/?search=${encodeURIComponent(xssPayload)}`);
@@ -35,9 +32,7 @@ async function analyze(url) {
             }
         } catch (e) {}
 
-        // --- ПАССИВНЫЙ АНАЛИЗ DOM ---
         
-        // Поиск форм без CSRF-защиты
         $('form').each((i, el) => {
             const hasCsrf = $(el).find('input[name*="csrf"], input[name*="token"]').length > 0;
             if (!hasCsrf && $(el).attr('method')?.toUpperCase() === 'POST') {
@@ -45,7 +40,6 @@ async function analyze(url) {
             }
         });
 
-        // Проверка заголовков (Безопасность транспорта)
         if (!headers['strict-transport-security']) {
             report.vulnerabilities.push("[LOW] Отсутствует HSTS заголовок: риск перехвата трафика (MITM).");
         }
@@ -54,7 +48,6 @@ async function analyze(url) {
             report.vulnerabilities.push(`[INFO] Сервер раскрывает свою версию: ${headers['server']}`);
         }
 
-        // Поиск чувствительных файлов в путях (Active Path Discovery)
         const commonPaths = ['/.env', '/.git/config', '/wp-config.php'];
         for (const path of commonPaths) {
             try {
@@ -65,7 +58,6 @@ async function analyze(url) {
             } catch (e) {}
         }
 
-        // Форматирование исходного кода
         report.data = beautify(response.data, { indent_size: 4 });
 
         return {
