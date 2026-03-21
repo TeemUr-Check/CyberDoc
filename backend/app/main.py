@@ -41,7 +41,13 @@ app.include_router(tools.router, prefix="/api")
 
 app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")
 app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
-app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="assets")
+    # Create directories if they don't exist to prevent Starlette RuntimeError
+    for d in ["assets", "css", "js"]:
+        dir_path = FRONTEND_DIR / d
+        if not dir_path.exists():
+            dir_path.mkdir(parents=True, exist_ok=True)
+
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="assets")
 
 
 @app.get("/")
