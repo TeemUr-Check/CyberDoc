@@ -6,16 +6,29 @@ from app.config import Settings
 
 logger = logging.getLogger(__name__)
 
+SYSTEM_PROMPT = (
+    "Ты - CyberDoc Pro AI, эксперт по информационной безопасности. "
+    "Помогаешь пользователям находить и устранять уязвимости в коде и веб-приложениях. "
+    "Отвечай кратко, профессионально, на русском языке."
+)
+
 
 class LangFlowClient:
-    """Async client for communicating with a LangFlow instance."""
+    """Async client: tries LangFlow first, falls back to direct Mistral API."""
 
     def __init__(self, settings: Settings):
-        self._url = settings.langflow_run_url
-        self._api_key = settings.langflow_api_key
+        self._langflow_url = settings.langflow_run_url
+        self._langflow_key = settings.langflow_api_key
+        self._mistral_key = settings.mistral_api_key
         self._timeout = settings.request_timeout
 
     async def send_message(self, message: str, session_id: str) -> str:
+        reply = await self._try_langflow(message, session_id)
+        if reply:
+            return reply
+        return await self._try_mistral_direct(message)
+
+    async def _try_langflow(self, message: str, session_id: str) -> str | None:
         payload = {
             "input_value": message,
             "output_type": "chat",
@@ -24,63 +37,67 @@ class LangFlowClient:
         }
         headers = {
             "Content-Type": "application/json",
-            "x-api-key": self._api_key,
+            "x-api-key": self._langflow_key,
         }
-        async with httpx.AsyncClient(
-            timeout=self._timeout,
-            verify=False,
-            trust_env=False,
-        ) as client:
-            try:
-                resp = await client.post(self._url, json=payload, headers=headers)
+        try:
+            async with httpx.AsyncClient(
+                timeout=self._timeout, verify=False, trust_env=False
+            ) as client:
+                resp = await client.post(
+                    self._langflow_url, json=payload, headers=headers
+                )
+                if resp.status_code == 200 and "json" in resp.headers.get("content-type", ""):
+                    data = resp.json()
+                    text = self._extract_reply(data)
+                    if text and "не удалось извлечь" not in text:
+                        return text
+                resp.raise_for_status()
+        except Exception as exc:
+            logger.info("LangFlow unavailable (%s), falling back to Mistral direct", exc)
+        return None
+
+    async def _try_mistral_direct(self, message: str) -> str:
+        if not self._mistral_key:
+            return (
+                "AI-ассистент не настроен. Укажите MISTRAL_API_KEY в переменных окружения "
+                "или настройте LangFlow."
+            )
+        payload = {
+            "model": "codestral-latest",
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": message},
+            ],
+            "max_tokens": 1024,
+            "temperature": 0.3,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self._mistral_key}",
+        }
+        try:
+            async with httpx.AsyncClient(
+                timeout=self._timeout, verify=False, trust_env=False
+            ) as client:
+                resp = await client.post(
+                    "https://api.mistral.ai/v1/chat/completions",
+                    json=payload,
+                    headers=headers,
+                )
                 resp.raise_for_status()
                 data = resp.json()
-                return self._extract_reply(data)
-            except httpx.TimeoutException:
-                logger.error("LangFlow request timed out")
-                return "Превышено время ожидания ответа от LangFlow."
-            except httpx.HTTPStatusError as exc:
-                return self._parse_http_error(exc)
-            except httpx.ConnectError:
-                logger.error("Cannot connect to LangFlow")
-                return (
-                    "Не удалось подключиться к LangFlow. "
-                    "Убедитесь, что LangFlow запущен (docker ps)."
-                )
-            except Exception as exc:
-                logger.error("LangFlow connection error: %s", exc)
-                return "Не удалось связаться с LangFlow. Проверьте, что сервис запущен."
-
-    @staticmethod
-    def _parse_http_error(exc: httpx.HTTPStatusError) -> str:
-        code = exc.response.status_code
-        body = exc.response.text[:500]
-        logger.error("LangFlow HTTP %s: %s", code, body)
-
-        if "api_key" in body.lower() or "api key" in body.lower():
-            return (
-                "Для работы AI-ассистента необходимо настроить ключ OpenAI API. "
-                "Откройте LangFlow (http://localhost:7860), выберите поток "
-                "'CyberDoc Chatbot', нажмите на узел 'Language Model' и "
-                "введите ваш OpenAI API ключ."
-            )
-        if code == 403:
-            return "Ошибка авторизации LangFlow. Проверьте API-ключ."
-        if code == 404:
-            return "Поток LangFlow не найден. Проверьте конфигурацию."
-
-        try:
-            data = json.loads(body)
-            detail = data.get("detail", "")
-            if isinstance(detail, str) and "message" in detail:
-                inner = json.loads(detail)
-                msg = inner.get("message", "")
-                if msg:
-                    return f"Ошибка LangFlow: {msg[:200]}"
-        except (json.JSONDecodeError, KeyError):
-            pass
-
-        return f"Ошибка LangFlow (HTTP {code})."
+                return data["choices"][0]["message"]["content"]
+        except httpx.TimeoutException:
+            return "Превышено время ожидания ответа от Mistral AI."
+        except httpx.HTTPStatusError as exc:
+            code = exc.response.status_code
+            logger.error("Mistral API error %s: %s", code, exc.response.text[:300])
+            if code == 401:
+                return "Неверный ключ Mistral API. Проверьте MISTRAL_API_KEY."
+            return f"Ошибка Mistral AI (HTTP {code})."
+        except Exception as exc:
+            logger.error("Mistral direct error: %s", exc)
+            return "Не удалось связаться с Mistral AI."
 
     @staticmethod
     def _extract_reply(data: dict) -> str:

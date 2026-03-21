@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     langflow_api_key: str = "sk-ezs36Qqkpcs1Uw0Hak132-jiHd8597jTWwzTa4pGVVM"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
+    mistral_api_key: str = ""
     request_timeout: float = 120.0
     frontend_dir: str = ""
 
