@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Инструменты — CyberDoc Pro</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/" class="nav-brand">
+        <div class="logo-icon">C</div>
+        CyberDoc
+    </a>
+    <ul class="nav-links">
+        <li><a href="/">Главная</a></li>
+        <li><a href="/chat">ИИ-ассистент</a></li>
+        <li><a href="/tools" class="active">Инструменты</a></li>
+    </ul>
+</nav>
+
+<div class="tools-layout">
+    <aside class="tools-sidebar">
+        <h3>Инструменты</h3>
+        <div class="tool-nav-item active" data-tool="page-analyzer" onclick="selectTool(this)">
+            <div class="tool-nav-icon">&#128269;</div>
+            <span>Анализ страницы</span>
+        </div>
+        <div class="tool-nav-item" data-tool="port-scanner" onclick="selectTool(this)">
+            <div class="tool-nav-icon">&#128268;</div>
+            <span>Сканер портов</span>
+        </div>
+        <div class="tool-nav-item" data-tool="ssl-checker" onclick="selectTool(this)">
+            <div class="tool-nav-icon">&#128274;</div>
+            <span>Проверка SSL</span>
+        </div>
+        <div class="tool-nav-item" data-tool="dns-recon" onclick="selectTool(this)">
+            <div class="tool-nav-icon">&#127760;</div>
+            <span>DNS-разведка</span>
+        </div>
+        <div class="tool-nav-item" data-tool="subdomain-scanner" onclick="selectTool(this)">
+            <div class="tool-nav-icon">&#128065;</div>
+            <span>Поиск поддоменов</span>
+        </div>
+        <div class="tool-nav-item" data-tool="dir-scanner" onclick="selectTool(this)">
+            <div class="tool-nav-icon">&#128193;</div>
+            <span>Сканер директорий</span>
+        </div>
+    </aside>
+
+    <main class="tools-main">
+        <div class="tool-header">
+            <h1 id="tool-title">Анализ страницы</h1>
+            <p id="tool-desc">Сканирование веб-страницы на уязвимости: XSS, CSRF, Open Redirect, утечка конфигураций.</p>
+        </div>
+
+        <div class="tool-form">
+            <input type="text" id="tool-input" class="tool-input" placeholder="Введите URL или хост...">
+            <button class="btn btn-primary" id="run-btn" onclick="executeTool()">Запустить</button>
+        </div>
+
+        <div id="result-vulns" class="result-section">
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="label label-danger">Найденные уязвимости</span>
+                    <button class="copy-btn" onclick="copyResult('vulns-output')">Копировать</button>
+                </div>
+                <div class="result-card-body">
+                    <pre id="vulns-output"></pre>
+                </div>
+            </div>
+        </div>
+
+        <div id="result-main" class="result-section">
+            <div class="result-card">
+                <div class="result-card-header">
+                    <span class="label label-info" id="main-label">Исходный код</span>
+                    <button class="copy-btn" onclick="copyResult('main-output')">Копировать</button>
+                </div>
+                <div class="result-card-body">
+                    <pre><code id="main-output"></code></pre>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/tools.js"></script>
+</body>
+</html>

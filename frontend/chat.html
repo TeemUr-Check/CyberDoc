@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ИИ-ассистент — CyberDoc Pro</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/" class="nav-brand">
+        <div class="logo-icon">C</div>
+        CyberDoc
+    </a>
+    <ul class="nav-links">
+        <li><a href="/">Главная</a></li>
+        <li><a href="/chat" class="active">ИИ-ассистент</a></li>
+        <li><a href="/tools">Инструменты</a></li>
+    </ul>
+</nav>
+
+<div class="chat-layout">
+    <aside class="chat-sidebar">
+        <div class="chat-sidebar-header">
+            <button class="btn btn-primary btn-sm" style="width:100%" onclick="createNewChat()">+ Новый диалог</button>
+        </div>
+        <div class="chat-list" id="chat-list"></div>
+    </aside>
+
+    <main class="chat-main">
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-empty" id="chat-empty">
+                <div class="empty-icon">&#128737;</div>
+                <h2>CyberDoc ИИ</h2>
+                <p>Задайте вопрос по информационной безопасности</p>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div class="chat-input-box">
+                <textarea id="chat-input" placeholder="Введите сообщение..." rows="1"></textarea>
+                <button class="send-btn" onclick="handleSend()" title="Отправить">&#10148;</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="/js/chat.js"></script>
+</body>
+</html>

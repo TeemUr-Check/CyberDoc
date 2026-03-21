@@ -1,0 +1,38 @@
+services:
+  langflow:
+    image: langflowai/langflow:latest
+    ports:
+      - "7860:7860"
+    environment:
+      - LANGFLOW_AUTO_LOGIN=true
+      - LANGFLOW_SKIP_AUTH_AUTO_LOGIN=true
+      - LANGFLOW_STORE=false
+      - LANGFLOW_WORKERS=1
+    volumes:
+      - langflow_data:/app/langflow
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - LANGFLOW_API_URL=http://langflow:7860/api/v1/run
+      - LANGFLOW_FLOW_ID=${LANGFLOW_FLOW_ID:-62fc74d3-9edf-4d49-b702-51cfe82c976c}
+      - LANGFLOW_API_KEY=${LANGFLOW_API_KEY:-sk-ezs36Qqkpcs1Uw0Hak132-jiHd8597jTWwzTa4pGVVM}
+      - REQUEST_TIMEOUT=120.0
+    volumes:
+      - ./frontend:/opt/cyberdoc/frontend:ro
+    depends_on:
+      langflow:
+        condition: service_healthy
+
+volumes:
+  langflow_data:
