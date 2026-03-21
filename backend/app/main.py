@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -8,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import chat, tools
 from app.config import get_settings
 
+logger = logging.getLogger(__name__)
 
 def _resolve_frontend_dir() -> Path:
     cfg = get_settings().frontend_dir
@@ -39,15 +41,19 @@ app.add_middleware(
 app.include_router(chat.router, prefix="/api")
 app.include_router(tools.router, prefix="/api")
 
-app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")
-app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
-    # Create directories if they don't exist to prevent Starlette RuntimeError
-    for d in ["assets", "css", "js"]:
-        dir_path = FRONTEND_DIR / d
+# Create directories if they don't exist to prevent Starlette RuntimeError
+# Wrapped in try-except for read-only filesystems (Docker :ro)
+for d in ["assets", "css", "js"]:
+    dir_path = FRONTEND_DIR / d
+    try:
         if not dir_path.exists():
             dir_path.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        logger.warning(f"Could not create directory {dir_path}: {e}")
 
-    app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="assets")
+app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")
+app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
+app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="assets")
 
 
 @app.get("/")
