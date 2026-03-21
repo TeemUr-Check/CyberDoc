@@ -1,102 +1,35 @@
 # CyberDoc Pro
 
-Платформа для автоматизированного аудита безопасности веб-ресурсов с ИИ-ассистентом.
+Веб-платформа для проверки безопасности (FastAPI + фронтенд). ИИ-чат: LangFlow (опционально) и прямой вызов Mistral API (fallback).
 
-## Возможности
+## Установка и запуск (Docker)
 
-- **ИИ-ассистент** на базе LangFlow для консультаций по информационной безопасности
-- **Анализ веб-страниц** на уязвимости (XSS, CSRF, Open Redirect, утечка файлов)
-- **Сканер портов** (TCP-проверка популярных сервисных портов)
-- **Проверка SSL/TLS** (сертификат, срок действия, цепочка доверия)
+**Нужно:** Docker и Docker Compose (v2).
 
-## Требования
+1. Клонируйте репозиторий и перейдите в папку проекта.
 
-- Docker и Docker Compose
-- OpenAI API ключ (для ИИ-ассистента)
+2. Создайте файл `.env` из шаблона и заполните значения:
+   ```bash
+   cp .env.example .env
+   ```
+   Минимум для чата без ручной настройки графа в LangFlow: **`MISTRAL_API_KEY`** (ключ Mistral AI).
 
-## Быстрый запуск
+3. Запуск:
+   ```bash
+   docker compose up -d --build
+   ```
 
-```bash
-# 1. Скопируйте .env.example в .env
-cp .env.example .env
+4. Откройте в браузере:
+   - приложение: **http://localhost:8000**
+   - LangFlow: **http://localhost:7860** (логин по умолчанию: `langflow` / `langflow`)
 
-# 2. Впишите ваш OpenAI API ключ в .env
-# OPENAI_API_KEY=sk-ваш-ключ
+Первый запуск LangFlow может занять 1-2 минуты, пока сервис станет `healthy`.
 
-# 3. Запустите одной командой
-docker compose up --build
-```
+### LangFlow и чат
 
-Приложение: `http://localhost:8000`
-LangFlow UI: `http://localhost:7860`
+- В `.env` укажите **`LANGFLOW_FLOW_ID`** и **`LANGFLOW_API_KEY`**, если бэкенд должен ходить в ваш поток LangFlow (ключ создаётся в LangFlow: Settings → API Keys).
+- Если поток ещё не создан или ID не совпадает с новой установкой, чат всё равно может отвечать через **Mistral**, если задан **`MISTRAL_API_KEY`**.
 
-## Настройка ИИ-ассистента
+### Другое устройство
 
-1. Откройте LangFlow UI: `http://localhost:7860`
-2. Найдите поток **CyberDoc Chatbot**
-3. Нажмите на узел **Language Model**
-4. Введите ваш OpenAI API ключ
-5. Сохраните поток
-
-После этого чат на `http://localhost:8000/chat` начнет отвечать.
-
-## Локальный запуск (без Docker)
-
-```bash
-# Запустить LangFlow
-docker run -d --name langflow -p 7860:7860 \
-  -e LANGFLOW_AUTO_LOGIN=true \
-  -e LANGFLOW_SKIP_AUTH_AUTO_LOGIN=true \
-  langflowai/langflow:latest
-
-# Запустить backend
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-## Переменные окружения
-
-| Переменная | Описание |
-| --- | --- |
-| `LANGFLOW_FLOW_ID` | Идентификатор потока в LangFlow |
-| `LANGFLOW_API_KEY` | Ключ доступа к LangFlow API |
-| `OPENAI_API_KEY` | Ключ OpenAI для работы ИИ-ассистента |
-
-## Структура проекта
-
-```
-CyberDoc/
-├── docker-compose.yml
-├── backend/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   └── app/
-│       ├── main.py
-│       ├── config.py
-│       ├── routers/
-│       │   ├── chat.py
-│       │   └── tools.py
-│       └── services/
-│           ├── langflow_client.py
-│           ├── page_analyzer.py
-│           ├── port_scanner.py
-│           └── ssl_checker.py
-├── frontend/
-│   ├── index.html
-│   ├── chat.html
-│   ├── tools.html
-│   ├── css/style.css
-│   └── js/
-│       ├── chat.js
-│       └── tools.js
-├── generate_docx.py
-└── doc_images/
-```
-
-## Стек технологий
-
-- **Backend**: Python 3.12, FastAPI, Uvicorn, httpx, BeautifulSoup4
-- **Frontend**: HTML5, CSS3, JavaScript (vanilla)
-- **ИИ**: LangFlow + OpenAI (gpt-4o-mini)
-- **Инфраструктура**: Docker, Docker Compose
+Файл `.env` в Git не хранится. Скопируйте его вручную или снова создайте из `.env.example` и вставьте свои ключи.
