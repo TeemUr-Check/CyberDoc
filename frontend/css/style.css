@@ -293,35 +293,6 @@ body {
     line-height: 1.6;
 }
 
-/* Stats */
-
-.stats-bar {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-top: 48px;
-    padding: 32px;
-    background: var(--card);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-value {
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--yellow);
-}
-
-.stat-label {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-top: 4px;
-}
-
 /* ===== CHAT PAGE ===== */
 
 .chat-layout {
@@ -855,10 +826,6 @@ body {
     .features-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-
-    .stats-bar {
-        grid-template-columns: repeat(2, 1fr);
-    }
 }
 
 @media (max-width: 768px) {
@@ -871,10 +838,6 @@ body {
     }
 
     .features-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .stats-bar {
         grid-template-columns: 1fr;
     }
 
