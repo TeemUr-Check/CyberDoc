@@ -8,12 +8,3 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# Documents and presentations (as per user request)
-*.docx
-*.pdf
-*.pptx
-doc_images/
-# Keep README.md but ignore other .md if they are just documents
-Проект.md
-# Document generation script
-generate_docx.py
