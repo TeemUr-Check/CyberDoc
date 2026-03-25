@@ -76,7 +76,7 @@ class LangFlowClient:
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": message},
             ],
-            "max_tokens": 2048,
+            "max_tokens": 16384,
             "temperature": 0.3,
         }
         headers = {
