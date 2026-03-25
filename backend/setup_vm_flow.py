@@ -11,7 +11,7 @@ def setup():
     client = httpx.Client(timeout=30.0)
     headers = {"Content-Type": "application/json"}
     
-    # 1. Try to login (LangFlow default is langflow/langflow)
+                                                             
     token = None
     try:
         print("[*] Attempting login with default credentials (langflow/langflow)...")
@@ -30,7 +30,7 @@ def setup():
         print(f"[!] Login error: {e}. Proceeding without token...")
 
     try:
-        # 2. Check if flow already exists
+                                         
         print("[*] Checking for existing CyberDoc flow...")
         flows_resp = client.get(f"{BASE_URL}/flows/", headers=headers)
         if flows_resp.status_code == 200:
@@ -40,7 +40,7 @@ def setup():
                     print_instructions(flow['id'])
                     return
 
-        # 3. Create a new flow if not found
+                                           
         print("[*] Creating new CyberDoc Chatbot flow...")
         flow_data = {
             "name": "CyberDoc Chatbot",

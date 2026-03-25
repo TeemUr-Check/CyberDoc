@@ -70,5 +70,5 @@ class DnsRecon:
                 return []
         except socket.gaierror:
             return []
-        # stdlib cannot query TXT directly; return placeholder
+                                                              
         return ["(TXT-запросы требуют dnspython; базовые записи получены)"]

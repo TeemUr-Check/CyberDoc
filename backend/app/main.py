@@ -41,8 +41,8 @@ app.add_middleware(
 app.include_router(chat.router, prefix="/api")
 app.include_router(tools.router, prefix="/api")
 
-# Create directories if they don't exist to prevent Starlette RuntimeError
-# Wrapped in try-except for read-only filesystems (Docker :ro)
+                                                                          
+                                                              
 for d in ["assets", "css", "js"]:
     dir_path = FRONTEND_DIR / d
     try:

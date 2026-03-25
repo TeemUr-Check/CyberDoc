@@ -70,6 +70,10 @@
         chat.history.forEach((m) => appendMessage(m.role, m.text, false));
         renderChatList();
         scrollBottom();
+
+        const titleEl = document.getElementById("mobile-chat-title");
+        if (titleEl) titleEl.textContent = chat.title;
+        if (typeof closeChatSidebar === "function") closeChatSidebar();
     }
 
     function showEmpty(show) {

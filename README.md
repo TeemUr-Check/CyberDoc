@@ -43,11 +43,4 @@ docker compose up -d --build
 docker compose down
 ```
 
-### LangFlow и чат
-
-- В `.env` задайте **`LANGFLOW_FLOW_ID`** и **`LANGFLOW_API_KEY`**, если бэкенд должен вызывать ваш поток в LangFlow (ключ: LangFlow → Settings → API Keys).
-- Если поток не настроен или ID не совпадает с новой установкой, чат может отвечать через **Mistral**, если указан **`MISTRAL_API_KEY`**.
-
-### Другое устройство
-
 Файл `.env` в репозиторий не попадает. Перенесите его вручную или снова выполните `cp` / `copy .env.example .env` и вставьте ключи.

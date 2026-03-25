@@ -16,7 +16,7 @@ def setup():
     client = httpx.Client(timeout=30.0, verify=False, proxy=None)
     headers = {"Content-Type": "application/json"}
 
-    # Login
+           
     print("[*] Logging in...")
     try:
         login_resp = client.post(
@@ -34,7 +34,7 @@ def setup():
         print(f"[!] Login error: {e}")
         return
 
-    # Check existing flows
+                          
     print("[*] Listing flows...")
     try:
         flows_resp = client.get(f"{BASE_URL}/flows/", headers=headers)
@@ -50,7 +50,7 @@ def setup():
     except Exception as e:
         print(f"[!] List flows error: {e}")
 
-    # Create flow
+                 
     print("[*] Creating CyberDoc Chatbot flow...")
     flow_payload = {
         "name": "CyberDoc Chatbot",
@@ -90,7 +90,7 @@ def setup():
     except Exception as e:
         print(f"[-] Create error: {e}")
 
-    # Generate API key
+                      
     print("[*] Generating API key...")
     try:
         key_resp = client.post(f"{BASE_URL}/api_key/", json={"name": "cyberdoc"}, headers=headers)

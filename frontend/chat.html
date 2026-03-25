@@ -16,6 +16,7 @@
         <div class="logo-icon">C</div>
         CyberDoc
     </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Меню">&#9776;</button>
     <ul class="nav-links">
         <li><a href="/">Главная</a></li>
         <li><a href="/chat" class="active">ИИ-ассистент</a></li>
@@ -24,14 +25,20 @@
 </nav>
 
 <div class="chat-layout">
-    <aside class="chat-sidebar">
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeChatSidebar()"></div>
+    <aside class="chat-sidebar" id="chat-sidebar">
         <div class="chat-sidebar-header">
-            <button class="btn btn-primary btn-sm" style="width:100%" onclick="createNewChat()">+ Новый диалог</button>
+            <button class="btn btn-primary btn-sm" style="width:100%" onclick="createNewChat(); closeChatSidebar();">+ Новый диалог</button>
         </div>
         <div class="chat-list" id="chat-list"></div>
     </aside>
 
     <main class="chat-main">
+        <div class="chat-mobile-header">
+            <button onclick="openChatSidebar()">&#9776; Диалоги</button>
+            <span id="mobile-chat-title">CyberDoc ИИ</span>
+            <button onclick="createNewChat()">+ Новый</button>
+        </div>
         <div class="chat-messages" id="chat-messages">
             <div class="chat-empty" id="chat-empty">
                 <div class="empty-icon">&#128737;</div>
@@ -50,5 +57,15 @@
 </div>
 
 <script src="/js/chat.js"></script>
+<script>
+function openChatSidebar() {
+    document.getElementById('chat-sidebar').classList.add('mobile-open');
+    document.getElementById('sidebar-overlay').classList.add('active');
+}
+function closeChatSidebar() {
+    document.getElementById('chat-sidebar').classList.remove('mobile-open');
+    document.getElementById('sidebar-overlay').classList.remove('active');
+}
+</script>
 </body>
 </html>
