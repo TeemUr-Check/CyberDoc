@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API-тестер — CyberDoc Pro</title>
+    <link rel="stylesheet" href="/css/style.css?v=5">
+    <style>
+        .api-layout{display:flex;height:calc(100vh - 64px);padding-top:64px}
+        .api-request-panel{width:50%;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow-y:auto}
+        .api-response-panel{width:50%;display:flex;flex-direction:column;overflow:hidden}
+        .api-panel-header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--dark)}
+        .api-panel-header h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted)}
+        .api-url-row{display:flex;gap:8px;padding:16px 24px;background:var(--dark);border-bottom:1px solid var(--border);flex-shrink:0}
+        .api-method-select{background:var(--card);color:var(--yellow);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;outline:none;min-width:100px}
+        .api-method-select:focus{border-color:var(--yellow)}
+        .api-url-input{flex:1;background:var(--black);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none}
+        .api-url-input:focus{border-color:var(--yellow)}
+        .api-send-btn{background:var(--yellow);color:var(--black);border:none;border-radius:var(--radius-sm);padding:10px 24px;font-weight:700;font-family:var(--font);font-size:14px;cursor:pointer;transition:var(--transition)}
+        .api-send-btn:hover{background:var(--yellow-hover)}
+        .api-send-btn:disabled{opacity:.5;cursor:not-allowed}
+        .api-section{padding:16px 24px;border-bottom:1px solid var(--border)}
+        .api-section-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+        .api-section-title button{background:var(--card);border:1px solid var(--border);color:var(--text-secondary);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--font)}
+        .api-section-title button:hover{border-color:var(--yellow);color:var(--yellow)}
+        .kv-row{display:flex;gap:8px;margin-bottom:6px}
+        .kv-row input{flex:1;background:var(--black);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none}
+        .kv-row input:focus{border-color:var(--yellow)}
+        .kv-row .kv-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:0 4px}
+        .kv-row .kv-del:hover{color:var(--danger)}
+        .api-body-editor{width:100%;min-height:120px;background:var(--black);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.5;resize:vertical;outline:none}
+        .api-body-editor:focus{border-color:var(--yellow)}
+        .resp-status{display:flex;align-items:center;gap:16px}
+        .status-badge{padding:6px 14px;border-radius:8px;font-weight:700;font-size:14px;font-family:'JetBrains Mono',monospace}
+        .status-2xx{background:rgba(46,204,113,.15);color:var(--success)}
+        .status-3xx{background:rgba(52,152,219,.15);color:var(--info)}
+        .status-4xx{background:rgba(243,156,18,.15);color:var(--warning)}
+        .status-5xx{background:rgba(255,76,76,.15);color:var(--danger)}
+        .resp-time{font-size:13px;color:var(--text-muted)}
+        .resp-tabs{display:flex;gap:4px;padding:0 24px;background:var(--dark);border-bottom:1px solid var(--border);flex-shrink:0}
+        .resp-tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:var(--transition)}
+        .resp-tab:hover{color:var(--text-primary)}
+        .resp-tab.active{color:var(--yellow);border-bottom-color:var(--yellow)}
+        .resp-content{flex:1;overflow:auto;padding:20px 24px}
+        .resp-body-pre{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--text-primary)}
+        .resp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text-muted);text-align:center;padding:48px}
+        .resp-empty .empty-icon{font-size:48px;margin-bottom:16px}
+        .sec-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:8px}
+        .sec-item.sec-ok{border-left:3px solid var(--success)}
+        .sec-item.sec-missing{border-left:3px solid var(--danger)}
+        .sec-item.sec-warn{border-left:3px solid var(--warning)}
+        .sec-header-name{font-size:13px;font-weight:600;margin-bottom:4px}
+        .sec-header-value{font-size:11px;color:var(--success);font-family:'JetBrains Mono',monospace}
+        .sec-header-desc{font-size:12px;color:var(--text-secondary);margin-top:4px}
+        .sec-header-fix{font-size:11px;color:var(--yellow);margin-top:4px;font-family:'JetBrains Mono',monospace}
+        .sec-sev{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:8px}
+        .sec-score{font-size:14px;font-weight:700;padding:6px 14px;border-radius:8px}
+        .resp-header-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+        .resp-header-key{color:var(--yellow);font-weight:600;font-family:'JetBrains Mono',monospace}
+        .resp-header-val{color:var(--text-secondary);font-family:'JetBrains Mono',monospace;text-align:right;max-width:60%;word-break:break-all}
+        @media(max-width:768px){
+            .api-layout{flex-direction:column;height:auto;min-height:calc(100vh - 64px)}
+            .api-request-panel,.api-response-panel{width:100%;border-right:none}
+            .api-request-panel{border-bottom:1px solid var(--border)}
+            .api-url-row{flex-wrap:wrap}
+            .api-method-select{min-width:80px}
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/" class="nav-brand">
+        <div class="logo-icon">C</div>
+        CyberDoc
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Меню">&#9776;</button>
+    <ul class="nav-links">
+        <li><a href="/">Главная</a></li>
+        <li><a href="/chat">ИИ-ассистент</a></li>
+        <li><a href="/tools">Инструменты</a></li>
+        <li><a href="/ctf">Полигон</a></li>
+        <li><a href="/ide">IDE</a></li>
+        <li><a href="/api-tester" class="active">API</a></li>
+    </ul>
+</nav>
+
+<div class="api-layout">
+    <div class="api-request-panel">
+        <div class="api-url-row">
+            <select class="api-method-select" id="req-method">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+                <option value="PATCH">PATCH</option>
+                <option value="HEAD">HEAD</option>
+                <option value="OPTIONS">OPTIONS</option>
+            </select>
+            <input type="text" class="api-url-input" id="req-url" placeholder="https://api.example.com/endpoint">
+            <button class="api-send-btn" id="send-btn" onclick="sendRequest()">Отправить</button>
+        </div>
+
+        <div class="api-section">
+            <div class="api-section-title">
+                Заголовки запроса
+                <button onclick="addHeaderRow()">+ Добавить</button>
+            </div>
+            <div id="headers-list">
+                <div class="kv-row">
+                    <input type="text" placeholder="Content-Type" class="hdr-key">
+                    <input type="text" placeholder="application/json" class="hdr-val">
+                    <button class="kv-del" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-section">
+            <div class="api-section-title">Тело запроса (Body)</div>
+            <textarea class="api-body-editor" id="req-body" placeholder='{"key": "value"}'></textarea>
+        </div>
+    </div>
+
+    <div class="api-response-panel">
+        <div class="api-panel-header" id="resp-header-bar" style="display:none">
+            <div class="resp-status">
+                <span class="status-badge" id="resp-status-badge"></span>
+                <span class="resp-time" id="resp-time"></span>
+            </div>
+            <span class="sec-score" id="resp-sec-score"></span>
+        </div>
+
+        <div class="resp-tabs" id="resp-tabs" style="display:none">
+            <div class="resp-tab active" data-tab="body" onclick="switchRespTab(this)">Ответ</div>
+            <div class="resp-tab" data-tab="headers" onclick="switchRespTab(this)">Заголовки</div>
+            <div class="resp-tab" data-tab="security" onclick="switchRespTab(this)">Безопасность</div>
+        </div>
+
+        <div class="resp-content" id="resp-content-body" style="display:none">
+            <pre class="resp-body-pre" id="resp-body"></pre>
+        </div>
+        <div class="resp-content" id="resp-content-headers" style="display:none"></div>
+        <div class="resp-content" id="resp-content-security" style="display:none"></div>
+
+        <div class="resp-empty" id="resp-empty">
+            <div class="empty-icon">&#128640;</div>
+            <h3>API-тестер</h3>
+            <p>Введите URL и нажмите «Отправить».<br>Ответ будет проанализирован на безопасность.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    function $(sel) { return document.querySelector(sel); }
+    function $$(sel) { return document.querySelectorAll(sel); }
+
+    window.addHeaderRow = function() {
+        var list = $("#headers-list");
+        var row = document.createElement("div");
+        row.className = "kv-row";
+        row.innerHTML = '<input type="text" placeholder="Header-Name" class="hdr-key"><input type="text" placeholder="value" class="hdr-val"><button class="kv-del" onclick="this.parentElement.remove()">&times;</button>';
+        list.appendChild(row);
+    };
+
+    window.switchRespTab = function(el) {
+        var tab = el.dataset.tab;
+        $$(".resp-tab").forEach(function(t) { t.classList.remove("active"); });
+        el.classList.add("active");
+        ["body", "headers", "security"].forEach(function(t) {
+            var panel = $("#resp-content-" + t);
+            if (panel) panel.style.display = t === tab ? "block" : "none";
+        });
+    };
+
+    function esc(s) {
+        var d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    window.sendRequest = async function() {
+        var url = $("#req-url").value.trim();
+        if (!url) return;
+        var method = $("#req-method").value;
+        var bodyText = $("#req-body").value;
+
+        var headers = {};
+        $$("#headers-list .kv-row").forEach(function(row) {
+            var k = row.querySelector(".hdr-key").value.trim();
+            var v = row.querySelector(".hdr-val").value.trim();
+            if (k) headers[k] = v;
+        });
+
+        var btn = $("#send-btn");
+        btn.disabled = true;
+        btn.textContent = "Отправка...";
+
+        try {
+            var resp = await fetch("/api/api-test/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ method: method, url: url, headers: headers, body: bodyText }),
+            });
+            var data = await resp.json();
+            if (!resp.ok) {
+                showError(data.detail || "Ошибка запроса");
+                return;
+            }
+            renderResponse(data);
+        } catch (e) {
+            showError("Ошибка соединения: " + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Отправить";
+        }
+    };
+
+    function showError(msg) {
+        $("#resp-empty").style.display = "none";
+        $("#resp-header-bar").style.display = "flex";
+        $("#resp-tabs").style.display = "flex";
+        $("#resp-status-badge").textContent = "Ошибка";
+        $("#resp-status-badge").className = "status-badge status-5xx";
+        $("#resp-time").textContent = "";
+        $("#resp-sec-score").textContent = "";
+        $("#resp-content-body").style.display = "block";
+        $("#resp-content-headers").style.display = "none";
+        $("#resp-content-security").style.display = "none";
+        $("#resp-body").textContent = msg;
+        $$(".resp-tab").forEach(function(t) { t.classList.remove("active"); });
+        $$(".resp-tab")[0].classList.add("active");
+    }
+
+    function renderResponse(data) {
+        $("#resp-empty").style.display = "none";
+        $("#resp-header-bar").style.display = "flex";
+        $("#resp-tabs").style.display = "flex";
+
+        var sc = data.status_code;
+        var badge = $("#resp-status-badge");
+        badge.textContent = sc;
+        badge.className = "status-badge " + (sc < 300 ? "status-2xx" : sc < 400 ? "status-3xx" : sc < 500 ? "status-4xx" : "status-5xx");
+        $("#resp-time").textContent = data.elapsed_ms + " мс";
+
+        var sec = data.security_analysis || {};
+        var scoreEl = $("#resp-sec-score");
+        var score = sec.score || 0;
+        scoreEl.textContent = score + "% безопасность";
+        scoreEl.style.background = score >= 70 ? "rgba(46,204,113,0.15)" : score >= 40 ? "rgba(243,156,18,0.15)" : "rgba(255,76,76,0.15)";
+        scoreEl.style.color = score >= 70 ? "#2ECC71" : score >= 40 ? "#F39C12" : "#FF4C4C";
+
+        var ct = (data.content_type || "").toLowerCase();
+        var bodyStr = data.response_body || "";
+        if (ct.indexOf("json") !== -1) {
+            try { bodyStr = JSON.stringify(JSON.parse(bodyStr), null, 2); } catch(e) {}
+        }
+        $("#resp-body").textContent = bodyStr;
+
+        var headersHtml = "";
+        var rh = data.response_headers || {};
+        Object.keys(rh).forEach(function(k) {
+            headersHtml += '<div class="resp-header-row"><span class="resp-header-key">' + esc(k) + '</span><span class="resp-header-val">' + esc(rh[k]) + '</span></div>';
+        });
+        $("#resp-content-headers").innerHTML = headersHtml;
+
+        var secHtml = "";
+        var present = sec.present_headers || [];
+        var missing = sec.missing_headers || [];
+        var corsWarn = sec.cors_warning;
+
+        if (corsWarn) {
+            secHtml += '<div class="sec-item sec-warn"><div class="sec-header-name">' + esc(corsWarn.header) + '<span class="sec-sev" style="background:rgba(255,140,0,0.15);color:#FF8C00">' + esc(corsWarn.severity) + '</span></div><div class="sec-header-desc">' + esc(corsWarn.description) + '</div><div class="sec-header-fix">' + esc(corsWarn.fix) + '</div></div>';
+        }
+        missing.forEach(function(m) {
+            var sevColor = m.severity === "HIGH" ? "#FF4C4C" : m.severity === "MEDIUM" ? "#F39C12" : "#3498DB";
+            secHtml += '<div class="sec-item sec-missing"><div class="sec-header-name">&#10060; ' + esc(m.header) + '<span class="sec-sev" style="background:rgba(255,76,76,0.1);color:' + sevColor + '">' + esc(m.severity) + '</span></div><div class="sec-header-desc">' + esc(m.description) + '</div><div class="sec-header-fix">' + esc(m.fix) + '</div></div>';
+        });
+        present.forEach(function(p) {
+            secHtml += '<div class="sec-item sec-ok"><div class="sec-header-name">&#9989; ' + esc(p.header) + '</div><div class="sec-header-value">' + esc(p.value) + '</div></div>';
+        });
+        $("#resp-content-security").innerHTML = secHtml;
+
+        $$(".resp-tab").forEach(function(t) { t.classList.remove("active"); });
+        $$(".resp-tab")[0].classList.add("active");
+        $("#resp-content-body").style.display = "block";
+        $("#resp-content-headers").style.display = "none";
+        $("#resp-content-security").style.display = "none";
+    }
+
+    $("#req-url").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") sendRequest();
+    });
+})();
+</script>
+</body>
+</html>

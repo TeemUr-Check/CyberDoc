@@ -3,54 +3,301 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberDoc Pro</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <title>CyberDoc Pro — ИИ-платформа кибербезопасности</title>
+    <link rel="stylesheet" href="/css/style.css?v=5">
+    <style>
+        body{overflow-x:hidden}
+        #hc{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+        .page-wrap{position:relative;z-index:1}
+        .hero-section{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;padding-top:64px}
+        .hero-glow{position:absolute;border-radius:50%;filter:blur(140px);opacity:.12;pointer-events:none}
+        .g1{width:500px;height:500px;top:-180px;left:-80px;background:#FFDD2D}
+        .g2{width:400px;height:400px;bottom:-120px;right:-60px;background:#3498DB}
+        .hero-inner{position:relative;z-index:2;text-align:center;max-width:720px;padding:0 24px}
+        .hero-inner h1{font-size:56px;font-weight:800;line-height:1.12;letter-spacing:-2px;margin-bottom:20px;background:linear-gradient(135deg,#fff 0%,#FFDD2D 50%,#fff 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 5s ease infinite}
+        @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+        .hero-inner p{font-size:18px;color:#999;max-width:520px;margin:0 auto 36px;line-height:1.7}
+        .hero-cta{display:inline-flex;align-items:center;gap:10px;padding:16px 40px;border-radius:14px;font-size:16px;font-weight:700;text-decoration:none;background:linear-gradient(135deg,#FFDD2D,#FFA500);color:#1A1A1A;box-shadow:0 0 40px rgba(255,221,45,.2);transition:.3s}
+        .hero-cta:hover{transform:translateY(-2px);box-shadow:0 0 60px rgba(255,221,45,.3)}
+
+        .pillars{padding:100px 0;position:relative}
+        .pillars .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:64px 64px;pointer-events:none}
+        .pillars-inner{max-width:1060px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;position:relative;z-index:1}
+        .pillar{border:1px solid #2A2A2A;border-radius:20px;padding:40px 32px;background:rgba(30,30,30,.6);backdrop-filter:blur(4px);transition:.35s;text-decoration:none;color:inherit;display:flex;flex-direction:column}
+        .pillar:hover{border-color:#444;transform:translateY(-4px);box-shadow:0 24px 60px rgba(0,0,0,.3)}
+        .pillar-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:24px}
+        .pi-yellow{background:rgba(255,221,45,.1)}
+        .pi-blue{background:rgba(52,152,219,.1)}
+        .pi-red{background:rgba(255,76,76,.1)}
+        .pillar h3{font-size:22px;font-weight:700;margin-bottom:10px}
+        .pillar p{font-size:14px;color:#888;line-height:1.7;margin-bottom:20px;flex:1}
+        .pillar-link{font-size:13px;font-weight:600;color:#FFDD2D;display:inline-flex;align-items:center;gap:6px;transition:.2s}
+        .pillar:hover .pillar-link{gap:10px}
+
+        .how{padding:80px 0 100px;text-align:center}
+        .how h2{font-size:32px;font-weight:700;margin-bottom:48px;letter-spacing:-0.5px}
+        .how h2 span{color:#FFDD2D}
+        .steps{display:flex;gap:0;justify-content:center;align-items:flex-start;max-width:800px;margin:0 auto;padding:0 24px}
+        .step{flex:1;position:relative;padding:0 20px}
+        .step-num{width:40px;height:40px;border-radius:50%;background:rgba(255,221,45,.1);border:2px solid #FFDD2D;color:#FFDD2D;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+        .step h4{font-size:15px;font-weight:600;margin-bottom:6px}
+        .step p{font-size:13px;color:#777;line-height:1.6}
+        .step-line{position:absolute;top:20px;left:calc(50% + 28px);width:calc(100% - 56px);height:2px;background:linear-gradient(90deg,#FFDD2D,transparent);right:auto}
+        .step:last-child .step-line{display:none}
+
+        .foot{text-align:center;padding:28px;border-top:1px solid #222;font-size:12px;color:#444}
+
+        @media(max-width:768px){
+            .hero-inner h1{font-size:32px;letter-spacing:-1px}
+            .hero-inner p{font-size:15px}
+            .pillars-inner{grid-template-columns:1fr;max-width:420px}
+            .steps{flex-direction:column;gap:32px;max-width:320px}
+            .step-line{display:none}
+        }
+    </style>
 </head>
 <body>
 
 <nav class="navbar">
-    <a href="/" class="nav-brand">
-        <div class="logo-icon">C</div>
-        CyberDoc
-    </a>
+    <a href="/" class="nav-brand"><div class="logo-icon">C</div>CyberDoc</a>
     <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Меню">&#9776;</button>
     <ul class="nav-links">
         <li><a href="/" class="active">Главная</a></li>
         <li><a href="/chat">ИИ-ассистент</a></li>
         <li><a href="/tools">Инструменты</a></li>
+        <li><a href="/ctf">Полигон</a></li>
+        <li><a href="/ide">IDE</a></li>
+        <li><a href="/api-tester">API</a></li>
     </ul>
 </nav>
 
-<div class="page-content">
-    <div class="container">
-        <section class="hero">
-            <h1>Анализ безопасности<br>с помощью <span>ИИ</span></h1>
-            <p>Платформа для автоматизированного аудита веб-ресурсов. Сканирование уязвимостей, проверка SSL-сертификатов и анализ сетевых портов в одном инструменте.</p>
-            <div class="hero-actions">
-                <a href="/chat" class="btn btn-primary">Начать диалог</a>
-                <a href="/tools" class="btn btn-secondary">Открыть инструменты</a>
-            </div>
-        </section>
+<canvas id="hc"></canvas>
+<div class="page-wrap">
 
-        <section class="features-grid">
-            <a href="/chat" class="feature-card">
-                <div class="feature-icon">&#128172;</div>
-                <h3>ИИ-ассистент</h3>
-                <p>Интеллектуальный чат-бот на базе LangFlow. Задавайте вопросы по информационной безопасности и получайте развернутые ответы.</p>
-            </a>
-            <a href="/tools" class="feature-card">
-                <div class="feature-icon">&#128269;</div>
-                <h3>Анализ страниц</h3>
-                <p>Автоматическое сканирование веб-страниц на наличие XSS, CSRF, Open Redirect и других распространенных уязвимостей.</p>
-            </a>
-            <a href="/tools" class="feature-card">
-                <div class="feature-icon">&#128274;</div>
-                <h3>Сетевые инструменты</h3>
-                <p>Сканирование портов и проверка SSL/TLS-сертификатов. Полный отчет о состоянии безопасности сервера.</p>
-            </a>
-        </section>
+<section class="hero-section">
+    <div class="hero-glow g1"></div>
+    <div class="hero-glow g2"></div>
+    <div class="hero-inner">
+        <h1>Находите уязвимости быстрее</h1>
+        <p>Платформа с ИИ-ассистентом для аудита кода, сетевого сканирования и обучения безопасной разработке</p>
+        <a href="/chat" class="hero-cta">Начать работу &#8594;</a>
     </div>
+</section>
+
+<section class="pillars">
+    <div class="grid-bg"></div>
+    <div class="pillars-inner">
+        <a href="/tools" class="pillar">
+            <div class="pillar-icon pi-blue">&#128269;</div>
+            <h3>Анализируй</h3>
+            <p>Сканирование портов, SSL, DNS, поиск утечек в GitHub-репозиториях и проверка зависимостей на CVE. Готовый отчёт в один клик.</p>
+            <span class="pillar-link">Открыть инструменты &#8594;</span>
+        </a>
+        <a href="/ctf" class="pillar">
+            <div class="pillar-icon pi-red">&#127919;</div>
+            <h3>Учись</h3>
+            <p>19 CTF-миссий от XSS до NoSQL-инъекций. Исследуй уязвимый код, объясни атаку, предложи исправление — ИИ оценит ответ.</p>
+            <span class="pillar-link">Перейти в полигон &#8594;</span>
+        </a>
+        <a href="/ide" class="pillar">
+            <div class="pillar-icon pi-yellow">&#128187;</div>
+            <h3>Пиши безопасно</h3>
+            <p>Онлайн-IDE с подсветкой синтаксиса и SAST-анализом. Пиши код, запускай проверку — получай рекомендации по исправлению.</p>
+            <span class="pillar-link">Открыть IDE &#8594;</span>
+        </a>
+    </div>
+</section>
+
+<section class="how">
+    <h2>Как это <span>работает</span></h2>
+    <div class="steps">
+        <div class="step">
+            <div class="step-line"></div>
+            <div class="step-num">1</div>
+            <h4>Загрузите цель</h4>
+            <p>URL, код или файл зависимостей</p>
+        </div>
+        <div class="step">
+            <div class="step-line"></div>
+            <div class="step-num">2</div>
+            <h4>Запустите анализ</h4>
+            <p>ИИ находит уязвимости и объясняет риски</p>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <h4>Получите исправление</h4>
+            <p>Готовый код и рекомендации</p>
+        </div>
+    </div>
+</section>
+
+<footer class="foot">CyberDoc &copy; 2026</footer>
 </div>
 
+<script>
+!function(){
+    var c=document.getElementById('hc'),x=c.getContext('2d');
+    var W,H,mx=-1,my=-1,t=0;
+    var dpr=Math.min(devicePixelRatio||1,2);
+
+    var prevW=0;
+    function resize(){
+        var nw=window.innerWidth;
+        W=nw; H=window.innerHeight;
+        c.width=W*dpr; c.height=H*dpr;
+        c.style.width=W+'px'; c.style.height=H+'px';
+        x.setTransform(dpr,0,0,dpr,0,0);
+        var changed=nw!==prevW; prevW=nw;
+        return changed;
+    }
+    resize(); window.addEventListener('resize',function(){if(resize())init()});
+
+    document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY});
+    document.addEventListener('mouseleave',function(){mx=-1;my=-1});
+
+    var pts=[], CONN=170, MOUSE_R=160, MOUSE_PUSH=.7;
+
+    var orbs=[
+        {x:0,   y:0,   r:320, cr:255,cg:221,cb:45,  phase:0,    freq:.15},
+        {x:1,   y:0,   r:280, cr:60, cg:160,cb:220,  phase:1.2,  freq:.12},
+        {x:1,   y:1,   r:300, cr:255,cg:120,cb:45,   phase:2.5,  freq:.18},
+        {x:0,   y:1,   r:260, cr:80, cg:180,cb:255,  phase:3.8,  freq:.14},
+        {x:.5,  y:.5,  r:350, cr:255,cg:221,cb:45,   phase:0.5,  freq:.1}
+    ];
+
+    var rings=[];
+    for(var i=0;i<4;i++) rings.push({cx:.5,cy:.5,r:0,max:Math.max(800,W),speed:40+i*15,phase:i*80,o:.06});
+
+    function mkP(layer){
+        var spd=[.1,.22,.42][layer];
+        var rMin=[.3,.8,1.6][layer];
+        var rMax=[.8,2,3.2][layer];
+        var oBase=[.09,.22,.4][layer];
+        return {
+            x:Math.random()*W, y:Math.random()*H,
+            vx:(Math.random()-.5)*spd, vy:(Math.random()-.5)*spd,
+            r:rMin+Math.random()*(rMax-rMin),
+            oBase:oBase+Math.random()*oBase*.5,
+            phase:Math.random()*6.28,
+            freq:.25+Math.random()*.5,
+            layer:layer,
+            hue:Math.random()>.72?1:0
+        };
+    }
+
+    function init(){
+        pts=[];
+        var counts=[50,70,35];
+        for(var l=0;l<3;l++)for(var i=0;i<counts[l];i++) pts.push(mkP(l));
+    }
+    init();
+
+    function draw(){
+        t+=.016;
+        x.clearRect(0,0,W,H);
+
+        for(var i=0;i<orbs.length;i++){
+            var o=orbs[i];
+            var pulse=Math.sin(t*o.freq+o.phase)*.35+.65;
+            var ox=o.x*W, oy=o.y*H, oR=o.r*pulse;
+            var g=x.createRadialGradient(ox,oy,0,ox,oy,oR);
+            g.addColorStop(0,'rgba('+o.cr+','+o.cg+','+o.cb+','+(0.07*pulse)+')');
+            g.addColorStop(.5,'rgba('+o.cr+','+o.cg+','+o.cb+','+(0.025*pulse)+')');
+            g.addColorStop(1,'rgba('+o.cr+','+o.cg+','+o.cb+',0)');
+            x.fillStyle=g;
+            x.fillRect(ox-oR,oy-oR,oR*2,oR*2);
+        }
+
+        for(var i=0;i<rings.length;i++){
+            var rn=rings[i];
+            rn.r+=rn.speed*.016;
+            if(rn.r>rn.max) rn.r=0;
+            var ra=.045*(1-rn.r/rn.max);
+            if(ra>0){
+                x.beginPath();
+                x.arc(rn.cx*W,rn.cy*H,rn.r,0,6.28);
+                x.strokeStyle='rgba(255,221,45,'+ra+')';
+                x.lineWidth=1;
+                x.stroke();
+            }
+        }
+
+        for(var i=0;i<pts.length;i++){
+            var p=pts[i];
+            p.x+=p.vx; p.y+=p.vy;
+
+            if(mx>0&&my>0){
+                var dmx=p.x-mx, dmy=p.y-my;
+                var dm=Math.sqrt(dmx*dmx+dmy*dmy);
+                if(dm<MOUSE_R&&dm>1){
+                    var force=MOUSE_PUSH*(1-dm/MOUSE_R)/dm;
+                    p.vx+=dmx*force; p.vy+=dmy*force;
+                }
+            }
+
+            var sp=[.1,.22,.42][p.layer];
+            var v=Math.sqrt(p.vx*p.vx+p.vy*p.vy);
+            if(v>sp*1.6){var sc=sp*1.6/v;p.vx*=sc;p.vy*=sc}
+
+            if(p.x<-10)p.x=W+10;if(p.x>W+10)p.x=-10;
+            if(p.y<-10)p.y=H+10;if(p.y>H+10)p.y=-10;
+
+            var pulse=Math.sin(t*p.freq+p.phase)*.3+.7;
+            var o=p.oBase*pulse;
+            var cr,cg,cb;
+            if(p.hue){cr=60;cg=160;cb=220}else{cr=255;cg=221;cb=45}
+
+            if(p.r>1.4){
+                var gr=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*6);
+                gr.addColorStop(0,'rgba('+cr+','+cg+','+cb+','+(o*.35)+')');
+                gr.addColorStop(1,'rgba('+cr+','+cg+','+cb+',0)');
+                x.fillStyle=gr;
+                x.fillRect(p.x-p.r*6,p.y-p.r*6,p.r*12,p.r*12);
+            }
+
+            x.beginPath();x.arc(p.x,p.y,p.r,0,6.28);
+            x.fillStyle='rgba('+cr+','+cg+','+cb+','+o+')';
+            x.fill();
+        }
+
+        x.lineWidth=.5;
+        for(var i=0;i<pts.length;i++){
+            var p=pts[i];
+            if(p.layer===0)continue;
+            for(var j=i+1;j<pts.length;j++){
+                var q=pts[j];
+                if(q.layer===0)continue;
+                var dx=p.x-q.x, dy=p.y-q.y, d2=dx*dx+dy*dy;
+                if(d2<CONN*CONN){
+                    var d=Math.sqrt(d2);
+                    var a=.14*(1-d/CONN);
+                    if(p.hue||q.hue){
+                        x.strokeStyle='rgba(60,160,220,'+a+')';
+                    }else{
+                        x.strokeStyle='rgba(255,221,45,'+a+')';
+                    }
+                    x.beginPath();x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.stroke();
+                }
+            }
+        }
+
+        if(mx>0&&my>0){
+            for(var i=0;i<pts.length;i++){
+                var p=pts[i];
+                var dx=p.x-mx,dy=p.y-my,d=Math.sqrt(dx*dx+dy*dy);
+                if(d<MOUSE_R){
+                    var a=.1*(1-d/MOUSE_R);
+                    x.strokeStyle='rgba(255,221,45,'+a+')';
+                    x.lineWidth=.4;
+                    x.beginPath();x.moveTo(mx,my);x.lineTo(p.x,p.y);x.stroke();
+                }
+            }
+        }
+
+        requestAnimationFrame(draw);
+    }
+    draw();
+}();
+</script>
 </body>
 </html>

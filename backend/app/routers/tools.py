@@ -1,12 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.config import Settings, get_settings
 from app.services.page_analyzer import PageAnalyzer
 from app.services.port_scanner import PortScanner
 from app.services.ssl_checker import SSLChecker
 from app.services.dns_recon import DnsRecon
 from app.services.subdomain_scanner import SubdomainScanner
 from app.services.dir_scanner import DirScanner
+from app.services.github_scanner import GitHubScanner
+from app.services.sca_scanner import scan_dependencies
 
 router = APIRouter(tags=["tools"])
 
@@ -98,9 +101,31 @@ async def scan_dirs(body: ToolRequest):
         raise HTTPException(status_code=500, detail=_exc_detail(exc))
 
 
+@router.post("/tool/github-scanner")
+async def scan_github(body: ToolRequest):
+    scanner = GitHubScanner()
+    try:
+        return await scanner.scan(body.params)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=_exc_detail(exc))
+
+
+class ScaRequest(BaseModel):
+    content: str
+
+
+@router.post("/tool/sca")
+async def sca_scan(body: ScaRequest):
+    try:
+        return await scan_dependencies(body.content)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=_exc_detail(exc))
+
+
 @router.post("/tool")
 async def run_tool(body: ToolRequest):
-    """Universal tool endpoint for backward compatibility."""
     handlers = {
         "page-analyzer": analyze_page,
         "port-scanner": scan_ports,
@@ -108,6 +133,7 @@ async def run_tool(body: ToolRequest):
         "dns-recon": dns_recon,
         "subdomain-scanner": scan_subdomains,
         "dir-scanner": scan_dirs,
+        "github-scanner": scan_github,
     }
     handler = handlers.get(body.tool_name)
     if not handler:

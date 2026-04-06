@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кибер-Полигон — CyberDoc Pro</title>
+    <link rel="stylesheet" href="/css/style.css?v=5">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        html { height: 100%; overflow: hidden; }
+        body.ctf-page {
+            height: 100%;
+            min-height: 100vh;
+            min-height: 100dvh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        body.ctf-page .ctf-shell {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 0;
+            line-height: 0;
+        }
+        body.ctf-page .ctf-shell > .navbar,
+        body.ctf-page .ctf-shell > .ctf-layout {
+            font-size: 1rem;
+            line-height: normal;
+        }
+        body.ctf-page .navbar {
+            position: relative;
+            top: auto;
+            left: auto;
+            right: auto;
+            flex-shrink: 0;
+        }
+        body.ctf-page .ctf-layout {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            overflow: hidden;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            height: auto !important;
+            max-height: none !important;
+        }
+        .ctf-sidebar {
+            width: var(--sidebar-width);
+            background: #222;
+            border-right: 1px solid #3A3A3A;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .ctf-sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #3A3A3A;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .ctf-sidebar-header h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6B6B6B;
+            margin: 0;
+        }
+        .ctf-score { font-size: 14px; font-weight: 700; color: #FFDD2D; }
+        .ctf-mission-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+        .m-card {
+            background: #2B2B2B;
+            border: 1px solid #3A3A3A;
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 14px 16px;
+            margin: 0 8px 4px 0;
+            cursor: pointer;
+            transition: 0.15s ease;
+        }
+        .m-card:hover { border-color: #FFDD2D; transform: translateY(-1px); }
+        .m-card.active { border-color: #FFDD2D; background: rgba(255,221,45,0.05); border-left: 3px solid #FFDD2D; }
+        .m-card.done { border-left: 3px solid #2ECC71 !important; }
+        .m-card-row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .m-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .m-dot-easy { background: #2ECC71; }
+        .m-dot-medium { background: #F39C12; }
+        .m-dot-hard { background: #FF4C4C; }
+        .m-dot-expert { background: #9B59B6; }
+        .m-card-title { font-size: 13px; font-weight: 500; color: #fff; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .m-card-check { color: #2ECC71; font-weight: 700; }
+        .m-card-row2 { display: flex; justify-content: space-between; font-size: 11px; color: #6B6B6B; padding-left: 18px; }
+
+        .ctf-main { flex: 1; overflow-y: auto; padding: 32px 48px; }
+        .ctf-empty {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; min-height: 60vh; text-align: center;
+        }
+        .ctf-empty .e-icon { font-size: 56px; margin-bottom: 20px; }
+        .ctf-empty h2 { font-size: 28px; margin-bottom: 8px; }
+        .ctf-empty p { color: #6B6B6B; margin-bottom: 32px; }
+        .st-cards { display: flex; gap: 16px; }
+        .st-card { background: #2B2B2B; border: 1px solid #3A3A3A; border-radius: 12px; padding: 20px 32px; text-align: center; }
+        .st-num { font-size: 28px; font-weight: 700; color: #FFDD2D; }
+        .st-lbl { font-size: 12px; color: #6B6B6B; margin-top: 4px; }
+
+        .ctf-mission { display: none; }
+        .mission-meta { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .badge { padding: 5px 14px; border-radius: 14px; font-size: 12px; font-weight: 600; }
+        .badge-easy { background: rgba(46,204,113,0.15); color: #2ECC71; }
+        .badge-medium { background: rgba(243,156,18,0.15); color: #F39C12; }
+        .badge-hard { background: rgba(255,76,76,0.15); color: #FF4C4C; }
+        .badge-expert { background: rgba(155,89,182,0.15); color: #9B59B6; }
+        .badge-cat { background: rgba(52,152,219,0.15); color: #3498DB; }
+        .badge-pts { background: rgba(255,221,45,0.1); color: #FFDD2D; }
+        .mission-title { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+        .mission-desc { color: #A0A0A0; font-size: 15px; line-height: 1.6; margin-bottom: 28px; }
+
+        .code-box { background: #222; border: 1px solid #3A3A3A; border-radius: 16px; overflow: hidden; margin-bottom: 28px; }
+        .code-box-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 20px; border-bottom: 1px solid #3A3A3A;
+            font-size: 13px; color: #6B6B6B; font-weight: 500;
+        }
+        .code-lang { background: #2B2B2B; padding: 3px 10px; border-radius: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .code-box pre { margin: 0; padding: 20px; overflow-x: auto; }
+        .code-box pre code { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; }
+
+        .answer-section { margin-bottom: 28px; }
+        .answer-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .answer-hint { font-size: 13px; color: #6B6B6B; margin-bottom: 12px; }
+        .answer-ta {
+            width: 100%; background: #222; border: 1px solid #3A3A3A; border-radius: 12px;
+            color: #fff; padding: 16px; font-family: inherit; font-size: 14px;
+            line-height: 1.6; resize: vertical; outline: none; margin-bottom: 16px;
+            transition: 0.2s ease;
+        }
+        .answer-ta:focus { border-color: #FFDD2D; }
+        .answer-actions { display: flex; gap: 12px; }
+
+        .hints-area { margin-bottom: 28px; }
+        .hint-box {
+            background: rgba(255,221,45,0.05); border: 1px solid rgba(255,221,45,0.2);
+            border-radius: 12px; padding: 14px 18px; margin-bottom: 10px;
+        }
+        .hint-num { font-size: 11px; font-weight: 600; color: #FFDD2D; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .hint-box p { font-size: 14px; color: #A0A0A0; line-height: 1.5; margin: 0; }
+
+        .result-box { background: #222; border: 1px solid #3A3A3A; border-radius: 16px; overflow: hidden; margin-bottom: 28px; }
+        .result-hd { padding: 20px 24px; border-bottom: 1px solid #3A3A3A; display: flex; align-items: center; justify-content: space-between; }
+        .res-status { font-size: 18px; font-weight: 700; }
+        .res-status.ok { color: #2ECC71; }
+        .res-status.fail { color: #FF4C4C; }
+        .res-score { font-size: 22px; font-weight: 700; color: #FFDD2D; }
+        .score-section { padding: 20px 24px; border-bottom: 1px solid #3A3A3A; }
+        .sb-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .sb-label { width: 110px; font-size: 13px; color: #A0A0A0; flex-shrink: 0; }
+        .sb-track { flex: 1; height: 8px; background: #2B2B2B; border-radius: 4px; overflow: hidden; }
+        .sb-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        .sb-val { width: 45px; font-size: 13px; font-weight: 600; text-align: right; flex-shrink: 0; }
+        .fb-section { padding: 20px 24px; }
+        .fb-section p { font-size: 14px; color: #A0A0A0; line-height: 1.7; margin: 0; }
+
+        @media (max-width: 900px) {
+            body.ctf-page .ctf-layout { flex-direction: column; }
+            .ctf-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #3A3A3A; max-height: 220px; }
+            .ctf-mission-list { display: flex; overflow-x: auto; gap: 8px; -webkit-overflow-scrolling: touch; }
+            .m-card { flex-shrink: 0; min-width: 220px; margin-bottom: 0; }
+            .ctf-main { padding: 20px 16px; }
+            .mission-title { font-size: 22px; }
+            .answer-actions { flex-direction: column; }
+            .st-cards { flex-wrap: wrap; }
+            .st-card { flex: 1; min-width: 80px; padding: 14px 16px 14px 16px; }
+            .st-num { font-size: 22px; }
+        }
+    </style>
+</head>
+<body class="ctf-page">
+
+<div class="ctf-shell"><nav class="navbar">
+    <a href="/" class="nav-brand">
+        <div class="logo-icon">C</div>
+        CyberDoc
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Меню">&#9776;</button>
+    <ul class="nav-links">
+        <li><a href="/">Главная</a></li>
+        <li><a href="/chat">ИИ-ассистент</a></li>
+        <li><a href="/tools">Инструменты</a></li>
+        <li><a href="/ctf" class="active">Полигон</a></li>
+        <li><a href="/ide">IDE</a></li>
+        <li><a href="/api-tester">API</a></li>
+    </ul>
+</nav><div class="ctf-layout">
+    <aside class="ctf-sidebar">
+        <div class="ctf-sidebar-header">
+            <h3>Миссии</h3>
+            <div class="ctf-score" id="ctf-score">0 очков</div>
+        </div>
+        <div class="ctf-mission-list" id="mission-list"></div>
+    </aside>
+
+    <main class="ctf-main">
+        <div class="ctf-empty" id="ctf-empty">
+            <div class="e-icon">&#127919;</div>
+            <h2>Кибер-Полигон</h2>
+            <p>Выберите миссию из списка слева, чтобы начать</p>
+            <div id="ctf-stats"></div>
+        </div>
+
+        <div class="ctf-mission" id="ctf-mission">
+            <div class="mission-meta" id="mission-meta"></div>
+            <h1 class="mission-title" id="m-title"></h1>
+            <p class="mission-desc" id="m-desc"></p>
+
+            <div class="code-box">
+                <div class="code-box-header">
+                    <span>Уязвимый код</span>
+                    <span class="code-lang" id="m-lang"></span>
+                </div>
+                <pre><code id="m-code"></code></pre>
+            </div>
+
+            <div class="answer-section">
+                <h3>Ваш ответ</h3>
+                <p class="answer-hint">Опишите уязвимость, покажите вектор атаки и предложите исправление</p>
+                <textarea id="answer-ta" class="answer-ta" rows="6" placeholder="1. Уязвимость: ...&#10;2. Вектор атаки: ...&#10;3. Исправление: ..."></textarea>
+                <div class="answer-actions">
+                    <button class="btn btn-primary" id="submit-btn">Отправить ответ</button>
+                    <button class="btn btn-secondary" id="hint-btn">&#128161; Подсказка <span id="hint-cnt"></span></button>
+                </div>
+            </div>
+
+            <div class="hints-area" id="hints-area" style="display:none"></div>
+            <div class="result-box" id="result-box" style="display:none">
+                <div class="result-hd" id="result-hd"></div>
+                <div class="score-section" id="score-sec"></div>
+                <div class="fb-section" id="fb-sec"></div>
+            </div>
+        </div>
+    </main>
+</div></div>
+
+<script>
+(function() {
+    var PK = "cyberdoc_ctf";
+    var missions = [];
+    var cur = null;
+    var hIdx = 0;
+    var progress = JSON.parse(localStorage.getItem(PK) || "{}");
+
+    function save() { localStorage.setItem(PK, JSON.stringify(progress)); }
+    function totalScore() {
+        var s = 0;
+        missions.forEach(function(m) {
+            var e = progress[m.id];
+            if (e) s += Number(e.score) || 0;
+        });
+        return s;
+    }
+    function missionDone(id) {
+        var e = progress[id];
+        return !!(e && e.passed === true && (Number(e.score) || 0) > 0);
+    }
+    function sanitizeProgress() {
+        var valid = {};
+        missions.forEach(function(m) { valid[m.id] = true; });
+        var changed = false;
+        for (var k in progress) {
+            if (!valid[k]) { delete progress[k]; changed = true; continue; }
+            var e = progress[k];
+            if (e.passed === true && (Number(e.score) || 0) <= 0) {
+                e.passed = false;
+                changed = true;
+            }
+        }
+        if (changed) save();
+    }
+    function esc(s) { var d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; }
+
+    async function init() {
+        try {
+            var r = await fetch("/api/ctf/missions");
+            missions = await r.json();
+            sanitizeProgress();
+            renderList();
+            renderStats();
+        } catch(e) {
+            document.getElementById("mission-list").innerHTML = '<p style="padding:16px;color:#666">Ошибка загрузки</p>';
+        }
+    }
+
+    function renderStats() {
+        var done = 0;
+        missions.forEach(function(m) { if (missionDone(m.id)) done++; });
+        var sc = totalScore();
+        document.getElementById("ctf-score").textContent = sc + " очков";
+        document.getElementById("ctf-stats").innerHTML =
+            '<div class="st-cards">' +
+            '<div class="st-card"><div class="st-num">' + missions.length + '</div><div class="st-lbl">Миссий</div></div>' +
+            '<div class="st-card"><div class="st-num">' + done + '</div><div class="st-lbl">Пройдено</div></div>' +
+            '<div class="st-card"><div class="st-num">' + sc + '</div><div class="st-lbl">Очков</div></div></div>';
+    }
+
+    function renderList() {
+        var el = document.getElementById("mission-list");
+        el.innerHTML = "";
+        missions.forEach(function(m) {
+            var d = missionDone(m.id);
+            var card = document.createElement("div");
+            card.className = "m-card" + (cur && cur.id===m.id ? " active" : "") + (d ? " done" : "");
+            card.innerHTML =
+                '<div class="m-card-row1">' +
+                '<span class="m-dot m-dot-' + m.difficulty + '"></span>' +
+                '<span class="m-card-title">' + esc(m.title) + '</span>' +
+                (d ? '<span class="m-card-check">&#10003;</span>' : '') + '</div>' +
+                '<div class="m-card-row2"><span>' + esc(m.category) + '</span><span>' + m.points + ' очк.</span></div>';
+            card.onclick = function() { loadMission(m.id); };
+            el.appendChild(card);
+        });
+    }
+
+    async function loadMission(id) {
+        try {
+            var r = await fetch("/api/ctf/mission/" + id);
+            cur = await r.json();
+            hIdx = 0;
+
+            document.getElementById("ctf-empty").style.display = "none";
+            var mp = document.getElementById("ctf-mission");
+            mp.style.display = "block";
+
+            var diffLabel = {easy:"Легко",medium:"Средне",hard:"Сложно",expert:"Эксперт"}[cur.difficulty]||cur.difficulty;
+            document.getElementById("mission-meta").innerHTML =
+                '<span class="badge badge-' + cur.difficulty + '">' + diffLabel + '</span>' +
+                '<span class="badge badge-cat">' + esc(cur.category) + '</span>' +
+                '<span class="badge badge-pts">' + cur.points + ' очков</span>';
+            document.getElementById("m-title").textContent = cur.title;
+            document.getElementById("m-desc").textContent = cur.description;
+            document.getElementById("m-lang").textContent = cur.language;
+            document.getElementById("hint-cnt").textContent = "(0/" + cur.total_hints + ")";
+
+            var codeEl = document.getElementById("m-code");
+            codeEl.textContent = cur.code;
+            codeEl.className = "language-" + cur.language;
+            codeEl.removeAttribute("data-highlighted");
+            hljs.highlightElement(codeEl);
+
+            document.getElementById("answer-ta").value = (progress[id] && progress[id].answer) || "";
+            document.getElementById("hints-area").style.display = "none";
+            document.getElementById("hints-area").innerHTML = "";
+            document.getElementById("result-box").style.display = "none";
+
+            renderList();
+        } catch(e) { console.error(e); }
+    }
+
+    document.getElementById("submit-btn").addEventListener("click", async function() {
+        if (!cur) return;
+        var ans = document.getElementById("answer-ta").value.trim();
+        if (!ans) return;
+        var btn = this;
+        btn.disabled = true; btn.textContent = "Проверка...";
+
+        try {
+            var r = await fetch("/api/ctf/check", {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({mission_id: cur.id, answer: ans})
+            });
+            var d = await r.json();
+            if (d.error) { showResult(false, 0, 30, d.error, null); return; }
+
+            var scores = d.scores || {};
+            var total = d.total || 0;
+            var passed = d.passed || false;
+            var fb = d.feedback || "";
+
+            if (passed) {
+                var earned = Math.round((total/30)*cur.points);
+                var prev = (progress[cur.id]||{}).score||0;
+                var best = Math.max(earned, prev);
+                if (best < 1) best = 1;
+                if (best > prev || !(progress[cur.id] && progress[cur.id].passed)) {
+                    progress[cur.id] = {passed:true, score:best, answer:ans};
+                    save();
+                }
+            } else {
+                var ex = progress[cur.id] || {};
+                if (!ex.passed || (Number(ex.score) || 0) <= 0) {
+                    progress[cur.id] = {passed:false, score:Number(ex.score)||0, answer:ans};
+                    save();
+                }
+            }
+            showResult(passed, total, 30, fb, scores);
+            renderStats(); renderList();
+        } catch(e) { showResult(false, 0, 30, "Ошибка: " + e.message, null); }
+        finally { btn.disabled = false; btn.textContent = "Отправить ответ"; }
+    });
+
+    function showResult(ok, total, max, fb, scores) {
+        var box = document.getElementById("result-box");
+        box.style.display = "block";
+        var pct = Math.round((total/max)*100);
+        document.getElementById("result-hd").innerHTML =
+            '<div class="res-status ' + (ok?"ok":"fail") + '">' + (ok?"&#10003; Миссия пройдена!":"&#10007; Попробуйте ещё раз") + '</div>' +
+            '<div class="res-score">' + total + '/' + max + ' (' + pct + '%)</div>';
+        if (scores) {
+            document.getElementById("score-sec").innerHTML = sbar("Определение", scores.identification, 10) + sbar("Объяснение", scores.explanation, 10) + sbar("Исправление", scores.fix, 10);
+        } else { document.getElementById("score-sec").innerHTML = ""; }
+        document.getElementById("fb-sec").innerHTML = '<p>' + esc(fb) + '</p>';
+        box.scrollIntoView({behavior:"smooth"});
+    }
+
+    function sbar(label, val, max) {
+        var pct = (val/max)*100;
+        var c = pct>=70?"#2ECC71":pct>=40?"#F39C12":"#FF4C4C";
+        return '<div class="sb-row"><span class="sb-label">' + label + '</span>' +
+            '<div class="sb-track"><div class="sb-fill" style="width:' + pct + '%;background:' + c + '"></div></div>' +
+            '<span class="sb-val">' + val + '/' + max + '</span></div>';
+    }
+
+    document.getElementById("hint-btn").addEventListener("click", async function() {
+        if (!cur || hIdx >= cur.total_hints) return;
+        try {
+            var r = await fetch("/api/ctf/hint", {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({mission_id: cur.id, hint_index: hIdx})
+            });
+            var d = await r.json();
+            if (d.hint) {
+                var area = document.getElementById("hints-area");
+                area.style.display = "block";
+                var h = document.createElement("div");
+                h.className = "hint-box";
+                h.innerHTML = '<span class="hint-num">Подсказка ' + (hIdx+1) + '</span><p>' + esc(d.hint) + '</p>';
+                area.appendChild(h);
+                hIdx++;
+                document.getElementById("hint-cnt").textContent = "(" + hIdx + "/" + cur.total_hints + ")";
+            }
+        } catch(e) { console.error(e); }
+    });
+
+    init();
+})();
+</script>
+</body>
+</html>

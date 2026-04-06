@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор кода — CyberDoc Pro</title>
+    <link rel="stylesheet" href="/css/style.css?v=5">
+    <style>
+        .sandbox-layout {
+            display: flex;
+            height: calc(100vh - 64px);
+            margin-top: 64px;
+        }
+        .sandbox-editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background: #1A1A1A;
+        }
+        .sandbox-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: #222;
+            border-bottom: 1px solid #3A3A3A;
+            flex-shrink: 0;
+            gap: 12px;
+        }
+        .sandbox-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .sandbox-select {
+            background: #2B2B2B;
+            color: #fff;
+            border: 1px solid #3A3A3A;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            outline: none;
+        }
+        .sandbox-select:focus { border-color: #FFDD2D; }
+        .sandbox-label {
+            font-size: 13px;
+            color: #6B6B6B;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .sandbox-editor-wrap {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+        #monaco-editor {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+        }
+        .sandbox-fallback {
+            width: 100%;
+            height: 100%;
+            background: #1A1A1A;
+            color: #E0E0E0;
+            border: none;
+            padding: 16px 20px;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+        }
+        .sandbox-results-panel {
+            width: 420px;
+            background: #222;
+            border-left: 1px solid #3A3A3A;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .sandbox-results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #3A3A3A;
+            flex-shrink: 0;
+        }
+        .sandbox-results-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #A0A0A0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0;
+        }
+        .vuln-counter {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+        .vuln-counter.has-vulns { background: rgba(255,76,76,0.15); color: #FF4C4C; }
+        .vuln-counter.clean { background: rgba(46,204,113,0.15); color: #2ECC71; }
+        .sandbox-results-body {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .sandbox-results-empty,
+        .sandbox-results-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 24px;
+            text-align: center;
+            color: #6B6B6B;
+            min-height: 200px;
+        }
+        .sandbox-results-empty .empty-icon { font-size: 40px; margin-bottom: 16px; }
+        .sandbox-results-loading { gap: 16px; }
+        .sandbox-summary {
+            padding: 16px 20px;
+            border-bottom: 1px solid #3A3A3A;
+            font-size: 13px;
+            color: #A0A0A0;
+            line-height: 1.6;
+        }
+        .sandbox-vuln-list { padding: 12px; }
+        .vuln-card {
+            background: #2B2B2B;
+            border: 1px solid #3A3A3A;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .vuln-card:hover { border-color: #FFDD2D; }
+        .vuln-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .vuln-sev {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .vuln-line-badge { font-size: 11px; color: #6B6B6B; margin-left: auto; }
+        .vuln-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+        .vuln-desc { font-size: 12px; color: #A0A0A0; line-height: 1.5; margin-bottom: 8px; }
+        .vuln-fix {
+            font-size: 12px;
+            color: #2ECC71;
+            line-height: 1.5;
+            padding-top: 8px;
+            border-top: 1px solid #3A3A3A;
+        }
+        .vuln-fixed-code {
+            background: #1A1A1A;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #2ECC71;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-x: auto;
+        }
+        .vuln-fixed-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #6B6B6B;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
+        @media (max-width: 900px) {
+            .sandbox-layout { flex-direction: column; height: auto; min-height: calc(100vh - 64px); }
+            .sandbox-editor-panel { height: 50vh; min-height: 300px; }
+            .sandbox-results-panel { width: 100%; border-left: none; border-top: 1px solid #3A3A3A; max-height: 50vh; }
+            .sandbox-toolbar { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/" class="nav-brand">
+        <div class="logo-icon">C</div>
+        CyberDoc
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Меню">&#9776;</button>
+    <ul class="nav-links">
+        <li><a href="/">Главная</a></li>
+        <li><a href="/chat">ИИ-ассистент</a></li>
+        <li><a href="/tools">Инструменты</a></li>
+        <li><a href="/ctf">Полигон</a></li>
+        <li><a href="/ide">IDE</a></li>
+        <li><a href="/api-tester">API</a></li>
+    </ul>
+</nav>
+
+<div class="sandbox-layout">
+    <div class="sandbox-editor-panel">
+        <div class="sandbox-toolbar">
+            <div class="sandbox-toolbar-left">
+                <select id="lang-select" class="sandbox-select">
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="php">PHP</option>
+                    <option value="java">Java</option>
+                    <option value="go">Go</option>
+                    <option value="html">HTML</option>
+                </select>
+                <span class="sandbox-label">SAST-анализатор кода</span>
+            </div>
+            <button class="btn btn-primary btn-sm" id="analyze-btn">&#9654; Анализировать</button>
+        </div>
+        <div class="sandbox-editor-wrap">
+            <div id="monaco-editor"></div>
+            <textarea id="fallback-editor" class="sandbox-fallback" style="display:none"
+                spellcheck="false">from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route("/search")
+def search():
+    query = request.args.get("q", "")
+    return f"&lt;h1&gt;Результаты: {query}&lt;/h1&gt;"
+</textarea>
+        </div>
+    </div>
+
+    <div class="sandbox-results-panel">
+        <div class="sandbox-results-header">
+            <h3>Результаты анализа</h3>
+            <span class="vuln-counter" id="vuln-counter"></span>
+        </div>
+        <div class="sandbox-results-body">
+            <div id="results-empty" class="sandbox-results-empty">
+                <div class="empty-icon">&#128737;</div>
+                <p>Вставьте код и нажмите<br>«Анализировать»</p>
+            </div>
+            <div id="results-loading" class="sandbox-results-loading" style="display:none">
+                <span class="loading-spinner"></span>
+                <p>ИИ анализирует код...</p>
+            </div>
+            <div id="results-summary" class="sandbox-summary" style="display:none"></div>
+            <div id="results-list" class="sandbox-vuln-list"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var editorReady = false;
+    var monacoEditor = null;
+    var fallbackEl = document.getElementById("fallback-editor");
+    var monacoEl = document.getElementById("monaco-editor");
+    var langSelect = document.getElementById("lang-select");
+    var analyzeBtn = document.getElementById("analyze-btn");
+
+    var defaultCode = 'from flask import Flask, request\n\napp = Flask(__name__)\n\n@app.route("/search")\ndef search():\n    query = request.args.get("q", "")\n    return f"<h1>Результаты: {query}</h1>"\n';
+
+    var langMap = { python:"python", javascript:"javascript", php:"php", java:"java", go:"go", html:"html" };
+
+    var sevColors = {
+        CRITICAL: "#FF4C4C", HIGH: "#FF8C00", MEDIUM: "#F39C12", LOW: "#3498DB", INFO: "#6B6B6B"
+    };
+    var sevBg = {
+        CRITICAL: "rgba(255,76,76,0.12)", HIGH: "rgba(255,140,0,0.12)", MEDIUM: "rgba(243,156,18,0.12)",
+        LOW: "rgba(52,152,219,0.12)", INFO: "rgba(107,107,107,0.12)"
+    };
+
+    function getCode() {
+        if (editorReady && monacoEditor) return monacoEditor.getValue();
+        return fallbackEl.value;
+    }
+
+    function initMonaco() {
+        var script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js";
+        script.onload = function() {
+            try {
+                require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs" }});
+                require(["vs/editor/editor.main"], function() {
+                    monaco.editor.defineTheme("cyberdoc", {
+                        base: "vs-dark", inherit: true, rules: [],
+                        colors: {
+                            "editor.background": "#1A1A1A",
+                            "editor.foreground": "#E0E0E0",
+                            "editorLineNumber.foreground": "#555555",
+                            "editorLineNumber.activeForeground": "#FFDD2D",
+                            "editor.selectionBackground": "#FFDD2D33",
+                            "editor.lineHighlightBackground": "#FFFFFF08",
+                            "editorCursor.foreground": "#FFDD2D"
+                        }
+                    });
+                    monacoEditor = monaco.editor.create(monacoEl, {
+                        value: defaultCode,
+                        language: "python",
+                        theme: "cyberdoc",
+                        fontSize: 14,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        minimap: { enabled: false },
+                        lineNumbers: "on",
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        padding: { top: 16, bottom: 16 },
+                        wordWrap: "on",
+                        renderLineHighlight: "line"
+                    });
+                    editorReady = true;
+                    fallbackEl.style.display = "none";
+                    monacoEl.style.display = "block";
+                });
+            } catch(e) { useFallback(); }
+        };
+        script.onerror = function() { useFallback(); };
+        document.head.appendChild(script);
+    }
+
+    function useFallback() {
+        monacoEl.style.display = "none";
+        fallbackEl.style.display = "block";
+        fallbackEl.value = defaultCode;
+    }
+
+    langSelect.addEventListener("change", function() {
+        if (editorReady && monacoEditor) {
+            monaco.editor.setModelLanguage(monacoEditor.getModel(), langMap[this.value] || "plaintext");
+        }
+    });
+
+    var decorations = [];
+
+    analyzeBtn.addEventListener("click", async function() {
+        var code = getCode().trim();
+        if (!code) return;
+
+        var lang = langSelect.value;
+        if (editorReady) decorations = monacoEditor.deltaDecorations(decorations, []);
+
+        document.getElementById("results-list").innerHTML = "";
+        document.getElementById("results-summary").style.display = "none";
+        document.getElementById("vuln-counter").textContent = "";
+        document.getElementById("results-empty").style.display = "none";
+        document.getElementById("results-loading").style.display = "flex";
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = "Анализ...";
+
+        try {
+            var resp = await fetch("/api/sandbox/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: code, language: lang })
+            });
+            var data = await resp.json();
+            renderResults(data);
+        } catch(e) {
+            document.getElementById("results-summary").style.display = "block";
+            document.getElementById("results-summary").textContent = "Ошибка: " + e.message;
+        } finally {
+            document.getElementById("results-loading").style.display = "none";
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML = "&#9654; Анализировать";
+        }
+    });
+
+    function renderResults(data) {
+        var vulns = data.vulnerabilities || [];
+        var summary = data.summary || "";
+        var listEl = document.getElementById("results-list");
+        var summaryEl = document.getElementById("results-summary");
+        var counterEl = document.getElementById("vuln-counter");
+
+        if (summary) {
+            summaryEl.style.display = "block";
+            summaryEl.textContent = summary;
+        }
+
+        if (vulns.length) {
+            counterEl.textContent = vulns.length + " найдено";
+            counterEl.className = "vuln-counter has-vulns";
+        } else {
+            counterEl.textContent = "Чисто";
+            counterEl.className = "vuln-counter clean";
+            listEl.innerHTML = '<div class="sandbox-results-empty" style="min-height:100px"><p>Уязвимостей не обнаружено</p></div>';
+            return;
+        }
+
+        var newDec = [];
+        vulns.forEach(function(v) {
+            var card = document.createElement("div");
+            card.className = "vuln-card";
+            card.innerHTML =
+                '<div class="vuln-card-header">' +
+                '<span class="vuln-sev" style="background:' + (sevBg[v.severity]||sevBg.INFO) + ';color:' + (sevColors[v.severity]||sevColors.INFO) + '">' + esc(v.severity) + '</span>' +
+                '<span class="vuln-line-badge">строка ' + v.line + '</span></div>' +
+                '<div class="vuln-title">' + esc(v.title) + '</div>' +
+                '<div class="vuln-desc">' + esc(v.description) + '</div>' +
+                '<div class="vuln-fix"><strong>Исправление:</strong> ' + esc(v.fix) + '</div>' +
+                (v.fixed_code ? '<div class="vuln-fixed-label">Исправленный код:</div><div class="vuln-fixed-code">' + esc(v.fixed_code) + '</div>' : '');
+            card.onclick = function() {
+                if (editorReady && monacoEditor && v.line) {
+                    monacoEditor.revealLineInCenter(v.line);
+                    monacoEditor.setPosition({ lineNumber: v.line, column: 1 });
+                    monacoEditor.focus();
+                }
+            };
+            listEl.appendChild(card);
+
+            if (v.line && editorReady && monacoEditor) {
+                newDec.push({
+                    range: new monaco.Range(v.line, 1, v.line, 1),
+                    options: {
+                        isWholeLine: true,
+                        className: "vuln-highlight-line",
+                        overviewRuler: { color: sevColors[v.severity] || "#888", position: 1 }
+                    }
+                });
+            }
+        });
+        if (editorReady && monacoEditor) decorations = monacoEditor.deltaDecorations(decorations, newDec);
+    }
+
+    function esc(s) { var d = document.createElement("div"); d.textContent = s||""; return d.innerHTML; }
+
+    initMonaco();
+    setTimeout(function() { if (!editorReady) useFallback(); }, 8000);
+})();
+</script>
+</body>
+</html>

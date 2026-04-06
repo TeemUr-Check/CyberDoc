@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import chat, tools
+from app.routers import chat, tools, sandbox, ctf, report, api_tester
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -40,6 +40,10 @@ app.add_middleware(
 
 app.include_router(chat.router, prefix="/api")
 app.include_router(tools.router, prefix="/api")
+app.include_router(sandbox.router, prefix="/api")
+app.include_router(ctf.router, prefix="/api")
+app.include_router(report.router, prefix="/api")
+app.include_router(api_tester.router, prefix="/api")
 
                                                                           
                                                               
@@ -69,3 +73,19 @@ async def serve_chat():
 @app.get("/tools")
 async def serve_tools():
     return FileResponse(FRONTEND_DIR / "tools.html")
+
+
+
+@app.get("/ctf")
+async def serve_ctf():
+    return FileResponse(FRONTEND_DIR / "ctf.html")
+
+
+@app.get("/ide")
+async def serve_ide():
+    return FileResponse(FRONTEND_DIR / "ide.html")
+
+
+@app.get("/api-tester")
+async def serve_api_tester():
+    return FileResponse(FRONTEND_DIR / "api-tester.html")

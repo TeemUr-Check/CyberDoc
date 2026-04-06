@@ -22,6 +22,7 @@
     --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
     --transition: 0.2s ease;
     --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --sidebar-width: 300px;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -302,7 +303,7 @@ body {
 }
 
 .chat-sidebar {
-    width: 300px;
+    width: var(--sidebar-width);
     background: var(--dark);
     border-right: 1px solid var(--border);
     display: flex;
@@ -598,7 +599,7 @@ body {
 }
 
 .tools-sidebar {
-    width: 280px;
+    width: var(--sidebar-width);
     background: var(--dark);
     border-right: 1px solid var(--border);
     padding: 20px 12px;
@@ -1151,4 +1152,11 @@ body {
     .result-card-body pre {
         font-size: 11px;
     }
+}
+
+/* Кибер-Полигон: навбар в .ctf-shell, без лишнего padding-top под fixed-навбар */
+body.ctf-page .ctf-layout {
+    padding-top: 0 !important;
+    height: auto !important;
+    min-height: 0;
 }

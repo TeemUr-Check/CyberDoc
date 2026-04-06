@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онлайн-IDE — CyberDoc Pro</title>
+    <link rel="stylesheet" href="/css/style.css?v=5">
+    <style>
+        .ide-layout{display:flex;height:calc(100vh - 64px);padding-top:64px;overflow:hidden}
+        .ide-sidebar{width:260px;background:var(--dark);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+        .ide-sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+        .ide-sidebar-header h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600}
+        .ide-sidebar-actions{display:flex;gap:4px}
+        .ide-sidebar-actions button{background:var(--card);border:1px solid var(--border);color:var(--text-secondary);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:var(--transition)}
+        .ide-sidebar-actions button:hover{border-color:var(--yellow);color:var(--yellow)}
+        .ide-file-list{flex:1;overflow-y:auto;padding:8px}
+        .ide-file-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:var(--transition);margin-bottom:2px}
+        .ide-file-item:hover{background:var(--card);color:var(--text-primary)}
+        .ide-file-item.active{background:rgba(255,221,45,.1);color:var(--yellow)}
+        .ide-file-icon{font-size:14px;flex-shrink:0;width:20px;text-align:center}
+        .ide-file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:12px}
+        .ide-file-del{opacity:0;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:0 2px;transition:var(--transition)}
+        .ide-file-item:hover .ide-file-del{opacity:1}
+        .ide-file-del:hover{color:var(--danger)}
+        .ide-main{flex:1;display:flex;flex-direction:column;min-width:0}
+        .ide-tabs{display:flex;background:var(--dark);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+        .ide-tab{display:flex;align-items:center;gap:8px;padding:10px 18px;font-size:12px;color:var(--text-muted);cursor:pointer;border-right:1px solid var(--border);white-space:nowrap;transition:var(--transition);font-family:'JetBrains Mono',monospace}
+        .ide-tab:hover{color:var(--text-primary);background:var(--card)}
+        .ide-tab.active{color:var(--yellow);background:var(--black);border-bottom:2px solid var(--yellow)}
+        .ide-tab .tab-close{font-size:14px;opacity:.5;transition:var(--transition)}
+        .ide-tab .tab-close:hover{opacity:1;color:var(--danger)}
+        .ide-tab .tab-dot{width:6px;height:6px;border-radius:50%;background:var(--yellow);display:none}
+        .ide-tab.modified .tab-dot{display:block}
+        .ide-editor-wrap{flex:1;position:relative;min-height:0}
+        #ide-monaco{width:100%;height:100%}
+        #ide-fallback{display:none;width:100%;height:100%;background:var(--black);color:var(--text-primary);border:none;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6;resize:none;outline:none}
+        .ide-statusbar{display:flex;align-items:center;justify-content:space-between;padding:4px 16px;background:var(--dark);border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);flex-shrink:0}
+        .ide-analysis-panel{width:380px;background:var(--dark);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+        .ide-analysis-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+        .ide-analysis-header h3{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:600}
+        .ide-analysis-body{flex:1;overflow-y:auto;padding:12px}
+        .ide-analysis-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;color:var(--text-muted);flex:1}
+        .ide-analysis-empty .empty-icon{font-size:32px;margin-bottom:12px}
+        .ide-vuln-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:var(--transition)}
+        .ide-vuln-card:hover{border-color:var(--yellow)}
+        .ide-new-file-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center}
+        .ide-new-file-modal.show{display:flex}
+        .ide-new-file-box{background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:28px;width:400px;max-width:90%}
+        .ide-new-file-box h3{margin-bottom:16px;font-size:16px}
+        .ide-new-file-box input{width:100%;background:var(--black);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;margin-bottom:16px}
+        .ide-new-file-box input:focus{border-color:var(--yellow)}
+        .ide-new-file-box .btns{display:flex;gap:8px;justify-content:flex-end}
+        @media(max-width:1024px){.ide-analysis-panel{display:none}}
+        @media(max-width:768px){
+            .ide-sidebar{display:none}
+            .ide-layout{flex-direction:column;height:auto;min-height:calc(100vh - 64px)}
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/" class="nav-brand">
+        <div class="logo-icon">C</div>
+        CyberDoc
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Меню">&#9776;</button>
+    <ul class="nav-links">
+        <li><a href="/">Главная</a></li>
+        <li><a href="/chat">ИИ-ассистент</a></li>
+        <li><a href="/tools">Инструменты</a></li>
+        <li><a href="/ctf">Полигон</a></li>
+        <li><a href="/ide" class="active">IDE</a></li>
+        <li><a href="/api-tester">API</a></li>
+    </ul>
+</nav>
+
+<div class="ide-layout">
+    <div class="ide-sidebar">
+        <div class="ide-sidebar-header">
+            <h3>Файлы проекта</h3>
+            <div class="ide-sidebar-actions">
+                <button onclick="showNewFileModal()" title="Новый файл">+</button>
+                <button onclick="importProject()" title="Импорт шаблона">&#128229;</button>
+            </div>
+        </div>
+        <div class="ide-file-list" id="file-list"></div>
+    </div>
+
+    <div class="ide-main">
+        <div class="ide-tabs" id="tab-bar"></div>
+        <div class="ide-editor-wrap">
+            <div id="ide-monaco"></div>
+            <textarea id="ide-fallback" spellcheck="false"></textarea>
+        </div>
+        <div class="ide-statusbar">
+            <span id="status-lang">Python</span>
+            <span id="status-info">Ln 1, Col 1</span>
+        </div>
+    </div>
+
+    <div class="ide-analysis-panel">
+        <div class="ide-analysis-header">
+            <h3>SAST-анализ</h3>
+            <button class="btn btn-sm btn-primary" onclick="analyzeCurrentFile()" style="padding:6px 14px;font-size:12px">Анализировать</button>
+        </div>
+        <div class="ide-analysis-body" id="analysis-body">
+            <div class="ide-analysis-empty">
+                <div class="empty-icon">&#128737;</div>
+                <p>Нажмите «Анализировать»<br>для проверки текущего файла</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ide-new-file-modal" id="new-file-modal">
+    <div class="ide-new-file-box">
+        <h3>Новый файл</h3>
+        <input type="text" id="new-file-name" placeholder="example.py" autofocus>
+        <div class="btns">
+            <button class="btn btn-secondary btn-sm" onclick="hideNewFileModal()">Отмена</button>
+            <button class="btn btn-primary btn-sm" onclick="createNewFile()">Создать</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var STORAGE_KEY = "cyberdoc_ide_files";
+    var monacoEditor = null;
+    var editorReady = false;
+    var files = {};
+    var openTabs = [];
+    var activeFile = null;
+
+    var TEMPLATES = {
+        "Python Flask": {
+            "app.py": 'from flask import Flask, request\n\napp = Flask(__name__)\n\n@app.route("/")\ndef index():\n    return "Hello, World!"\n\n@app.route("/search")\ndef search():\n    query = request.args.get("q", "")\n    return f"<h1>Результат: {query}</h1>"\n\nif __name__ == "__main__":\n    app.run(debug=True)\n',
+            "config.py": 'import os\n\nSECRET_KEY = os.environ.get("SECRET_KEY", "change-me")\nDATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///app.db")\nDEBUG = True\n',
+            "requirements.txt": "flask==3.0.0\nrequests==2.31.0\n"
+        },
+        "Node.js Express": {
+            "index.js": 'const express = require("express");\nconst app = express();\n\napp.use(express.json());\n\napp.get("/", (req, res) => {\n  res.send("Hello World!");\n});\n\napp.get("/user/:id", (req, res) => {\n  const userId = req.params.id;\n  res.json({ id: userId, name: "User " + userId });\n});\n\napp.listen(3000, () => console.log("Server on :3000"));\n',
+            "package.json": '{\n  "name": "my-app",\n  "version": "1.0.0",\n  "dependencies": {\n    "express": "^4.18.2"\n  }\n}\n'
+        },
+        "HTML/JS": {
+            "index.html": '<!DOCTYPE html>\n<html lang="ru">\n<head>\n  <meta charset="UTF-8">\n  <title>My App</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n  <div id="app"></div>\n  <script src="app.js"><\/script>\n</body>\n</html>\n',
+            "app.js": 'document.addEventListener("DOMContentLoaded", function() {\n  var name = new URLSearchParams(location.search).get("name");\n  document.getElementById("app").innerHTML = "<h1>Hello, " + name + "!</h1>";\n});\n',
+            "style.css": "body { font-family: sans-serif; background: #1a1a1a; color: #fff; }\n"
+        }
+    };
+
+    var EXT_LANG = {
+        py: "python", js: "javascript", ts: "typescript", html: "html",
+        css: "css", json: "json", md: "markdown", xml: "xml",
+        go: "go", rs: "rust", java: "java", c: "c", cpp: "cpp",
+        sh: "shell", yml: "yaml", yaml: "yaml", txt: "plaintext",
+        sql: "sql", php: "php", rb: "ruby"
+    };
+
+    function getExt(name) {
+        var parts = name.split(".");
+        return parts.length > 1 ? parts.pop().toLowerCase() : "";
+    }
+
+    function getLang(name) {
+        return EXT_LANG[getExt(name)] || "plaintext";
+    }
+
+    function getFileIcon(name) {
+        var ext = getExt(name);
+        var icons = { py: "&#128013;", js: "&#9997;", ts: "&#128308;", html: "&#127760;", css: "&#127912;", json: "&#128196;", md: "&#128214;", txt: "&#128196;" };
+        return icons[ext] || "&#128196;";
+    }
+
+    function loadFiles() {
+        try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) files = JSON.parse(raw);
+        } catch(e) {}
+        if (!Object.keys(files).length) {
+            files = { "main.py": 'from flask import Flask, request\n\napp = Flask(__name__)\n\n@app.route("/search")\ndef search():\n    query = request.args.get("q", "")\n    return f"<h1>Результат: {query}</h1>"\n' };
+        }
+    }
+
+    function saveFiles() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(files)); } catch(e) {}
+    }
+
+    function renderFileList() {
+        var list = document.getElementById("file-list");
+        list.innerHTML = "";
+        var names = Object.keys(files).sort();
+        names.forEach(function(name) {
+            var el = document.createElement("div");
+            el.className = "ide-file-item" + (name === activeFile ? " active" : "");
+            el.innerHTML = '<span class="ide-file-icon">' + getFileIcon(name) + '</span><span class="ide-file-name">' + esc(name) + '</span><button class="ide-file-del" title="Удалить">&times;</button>';
+            el.querySelector(".ide-file-name").addEventListener("click", function() { openFile(name); });
+            el.querySelector(".ide-file-del").addEventListener("click", function(e) { e.stopPropagation(); deleteFile(name); });
+            list.appendChild(el);
+        });
+    }
+
+    function renderTabs() {
+        var bar = document.getElementById("tab-bar");
+        bar.innerHTML = "";
+        openTabs.forEach(function(name) {
+            var tab = document.createElement("div");
+            tab.className = "ide-tab" + (name === activeFile ? " active" : "");
+            tab.innerHTML = '<span class="tab-dot"></span>' + esc(name) + '<span class="tab-close">&times;</span>';
+            tab.addEventListener("click", function(e) {
+                if (e.target.classList.contains("tab-close")) { closeTab(name); return; }
+                openFile(name);
+            });
+            bar.appendChild(tab);
+        });
+    }
+
+    function openFile(name) {
+        if (!files.hasOwnProperty(name)) return;
+        if (activeFile && monacoEditor && editorReady) {
+            files[activeFile] = monacoEditor.getValue();
+            saveFiles();
+        }
+        activeFile = name;
+        if (openTabs.indexOf(name) === -1) openTabs.push(name);
+        if (editorReady && monacoEditor) {
+            var model = monacoEditor.getModel();
+            monaco.editor.setModelLanguage(model, getLang(name));
+            monacoEditor.setValue(files[name] || "");
+        } else {
+            document.getElementById("ide-fallback").value = files[name] || "";
+        }
+        document.getElementById("status-lang").textContent = getLang(name);
+        renderFileList();
+        renderTabs();
+        clearAnalysis();
+    }
+
+    function closeTab(name) {
+        var idx = openTabs.indexOf(name);
+        if (idx > -1) openTabs.splice(idx, 1);
+        if (activeFile === name) {
+            if (openTabs.length > 0) { openFile(openTabs[Math.max(0, idx - 1)]); }
+            else { activeFile = null; if (editorReady && monacoEditor) monacoEditor.setValue(""); renderFileList(); renderTabs(); }
+        } else { renderTabs(); }
+    }
+
+    function deleteFile(name) {
+        if (!confirm("Удалить файл " + name + "?")) return;
+        delete files[name];
+        saveFiles();
+        closeTab(name);
+        if (Object.keys(files).length === 0) {
+            files["untitled.py"] = "";
+            saveFiles();
+            openFile("untitled.py");
+        }
+        renderFileList();
+    }
+
+    window.showNewFileModal = function() {
+        document.getElementById("new-file-modal").classList.add("show");
+        var inp = document.getElementById("new-file-name");
+        inp.value = "";
+        inp.focus();
+    };
+
+    window.hideNewFileModal = function() {
+        document.getElementById("new-file-modal").classList.remove("show");
+    };
+
+    window.createNewFile = function() {
+        var name = document.getElementById("new-file-name").value.trim();
+        if (!name) return;
+        if (files.hasOwnProperty(name)) { alert("Файл уже существует"); return; }
+        files[name] = "";
+        saveFiles();
+        hideNewFileModal();
+        openFile(name);
+    };
+
+    document.getElementById("new-file-name").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") createNewFile();
+        if (e.key === "Escape") hideNewFileModal();
+    });
+
+    window.importProject = function() {
+        var names = Object.keys(TEMPLATES);
+        var choice = prompt("Выберите шаблон:\n" + names.map(function(n, i) { return (i + 1) + ". " + n; }).join("\n") + "\n\nВведите номер:");
+        if (!choice) return;
+        var idx = parseInt(choice) - 1;
+        if (idx < 0 || idx >= names.length) return;
+        var tpl = TEMPLATES[names[idx]];
+        Object.keys(tpl).forEach(function(fname) { files[fname] = tpl[fname]; });
+        saveFiles();
+        renderFileList();
+        var first = Object.keys(tpl)[0];
+        if (first) openFile(first);
+    };
+
+    function clearAnalysis() {
+        document.getElementById("analysis-body").innerHTML = '<div class="ide-analysis-empty"><div class="empty-icon">&#128737;</div><p>Нажмите «Анализировать»<br>для проверки текущего файла</p></div>';
+    }
+
+    var sevBg = { CRITICAL: "rgba(255,76,76,0.15)", HIGH: "rgba(255,140,0,0.15)", MEDIUM: "rgba(243,156,18,0.15)", LOW: "rgba(52,152,219,0.15)", INFO: "rgba(107,107,107,0.15)" };
+    var sevColors = { CRITICAL: "#FF4C4C", HIGH: "#FF8C00", MEDIUM: "#F39C12", LOW: "#3498DB", INFO: "#6B6B6B" };
+
+    window.analyzeCurrentFile = async function() {
+        if (!activeFile) return;
+        if (editorReady && monacoEditor) files[activeFile] = monacoEditor.getValue();
+        var code = files[activeFile] || "";
+        if (!code.trim()) return;
+        var lang = getLang(activeFile);
+        var body = document.getElementById("analysis-body");
+        body.innerHTML = '<div class="ide-analysis-empty"><span class="loading-spinner"></span><p style="margin-top:12px">Анализируем код...</p></div>';
+
+        try {
+            var resp = await fetch("/api/sandbox/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: code, language: lang })
+            });
+            var data = await resp.json();
+            var vulns = data.vulnerabilities || [];
+            if (vulns.length === 0) {
+                body.innerHTML = '<div class="ide-analysis-empty"><div class="empty-icon">&#9989;</div><p>' + esc(data.summary || "Уязвимостей не найдено") + '</p></div>';
+                return;
+            }
+
+            var html = '<div style="padding:8px 6px;font-size:12px;color:#A0A0A0;margin-bottom:8px">' + esc(data.summary || "") + '</div>';
+            vulns.forEach(function(v) {
+                html += '<div class="ide-vuln-card" onclick="gotoLine(' + (v.line || 1) + ')">';
+                html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="vuln-sev" style="background:' + (sevBg[v.severity] || sevBg.INFO) + ';color:' + (sevColors[v.severity] || sevColors.INFO) + '">' + esc(v.severity) + '</span><span style="font-size:11px;color:#6B6B6B;margin-left:auto">строка ' + (v.line || "?") + '</span></div>';
+                html += '<div style="font-size:13px;font-weight:600;margin-bottom:4px">' + esc(v.title) + '</div>';
+                html += '<div style="font-size:12px;color:#A0A0A0;line-height:1.5;margin-bottom:6px">' + esc(v.description) + '</div>';
+                html += '<div style="font-size:12px;color:#2ECC71;padding-top:6px;border-top:1px solid #3A3A3A"><strong>Исправление:</strong> ' + esc(v.fix) + '</div>';
+                if (v.fixed_code) {
+                    html += '<div style="font-size:10px;font-weight:600;color:#6B6B6B;text-transform:uppercase;letter-spacing:.5px;margin-top:8px">Исправленный код:</div>';
+                    html += '<div style="background:#1A1A1A;border:1px solid #333;border-radius:8px;padding:8px 12px;margin-top:4px;font-family:JetBrains Mono,monospace;font-size:11px;color:#2ECC71;white-space:pre-wrap;overflow-x:auto">' + esc(v.fixed_code) + '</div>';
+                }
+                html += '</div>';
+            });
+            body.innerHTML = html;
+        } catch (e) {
+            body.innerHTML = '<div class="ide-analysis-empty"><div class="empty-icon">&#10060;</div><p>Ошибка: ' + esc(e.message) + '</p></div>';
+        }
+    };
+
+    window.gotoLine = function(line) {
+        if (editorReady && monacoEditor) {
+            monacoEditor.revealLineInCenter(line);
+            monacoEditor.setPosition({ lineNumber: line, column: 1 });
+            monacoEditor.focus();
+        }
+    };
+
+    function esc(s) {
+        if (!s) return "";
+        var d = document.createElement("div");
+        d.textContent = String(s);
+        return d.innerHTML;
+    }
+
+    function initMonaco() {
+        var el = document.getElementById("ide-monaco");
+        var fallback = document.getElementById("ide-fallback");
+        var script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js";
+        script.onload = function() {
+            require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs" } });
+            require(["vs/editor/editor.main"], function() {
+                monacoEditor = monaco.editor.create(el, {
+                    value: files[activeFile] || "",
+                    language: getLang(activeFile || "main.py"),
+                    theme: "vs-dark",
+                    fontSize: 14,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    minimap: { enabled: true },
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 4,
+                    wordWrap: "off",
+                    renderWhitespace: "selection",
+                    bracketPairColorization: { enabled: true },
+                    padding: { top: 12 },
+                });
+                editorReady = true;
+                monacoEditor.onDidChangeCursorPosition(function(e) {
+                    document.getElementById("status-info").textContent = "Ln " + e.position.lineNumber + ", Col " + e.position.column;
+                });
+                monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function() {
+                    if (activeFile) { files[activeFile] = monacoEditor.getValue(); saveFiles(); }
+                });
+            });
+        };
+        script.onerror = function() {
+            el.style.display = "none";
+            fallback.style.display = "block";
+            fallback.value = files[activeFile] || "";
+        };
+        document.head.appendChild(script);
+        setTimeout(function() {
+            if (!editorReady) {
+                el.style.display = "none";
+                fallback.style.display = "block";
+                fallback.value = files[activeFile] || "";
+            }
+        }, 8000);
+    }
+
+    loadFiles();
+    var firstFile = Object.keys(files).sort()[0];
+    if (firstFile) { activeFile = firstFile; openTabs.push(firstFile); }
+    renderFileList();
+    renderTabs();
+    initMonaco();
+})();
+</script>
+</body>
+</html>
