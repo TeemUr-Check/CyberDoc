@@ -31,10 +31,24 @@
         .ide-tab .tab-close:hover{opacity:1;color:var(--danger)}
         .ide-tab .tab-dot{width:6px;height:6px;border-radius:50%;background:var(--yellow);display:none}
         .ide-tab.modified .tab-dot{display:block}
-        .ide-editor-wrap{flex:1;position:relative;min-height:0}
+        .ide-editor-wrap{flex:1;position:relative;min-height:0;display:flex;flex-direction:column}
+        .ide-editor-container{flex:1;position:relative;min-height:0}
         #ide-monaco{width:100%;height:100%}
         #ide-fallback{display:none;width:100%;height:100%;background:var(--black);color:var(--text-primary);border:none;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6;resize:none;outline:none}
+        .ide-terminal{height:200px;background:#1e1e1e;border-top:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+        .ide-terminal-header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#252526;border-bottom:1px solid #333;font-size:11px;color:#ccc;text-transform:uppercase;letter-spacing:1px}
+        .ide-terminal-header .actions{display:flex;gap:8px}
+        .ide-terminal-header button{background:none;border:none;color:#ccc;cursor:pointer;font-size:12px}
+        .ide-terminal-header button:hover{color:#fff}
+        .ide-terminal-output{flex:1;padding:10px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:#d4d4d4;white-space:pre-wrap}
+        .ide-terminal-output.error{color:#f48771}
         .ide-statusbar{display:flex;align-items:center;justify-content:space-between;padding:4px 16px;background:var(--dark);border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);flex-shrink:0}
+        .ide-statusbar-left{display:flex;align-items:center;gap:12px}
+        .ide-statusbar-right{display:flex;align-items:center;gap:12px}
+        .ide-run-btn{background:#2ea043;color:#fff;border:none;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+        .ide-run-btn:hover{background:#3fb950}
+        .ide-poc-btn{background:#8957e5;color:#fff;border:none;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+        .ide-poc-btn:hover{background:#9e6aed}
         .ide-analysis-panel{width:380px;background:var(--dark);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
         .ide-analysis-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
         .ide-analysis-header h3{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);font-weight:600}
@@ -90,12 +104,30 @@
     <div class="ide-main">
         <div class="ide-tabs" id="tab-bar"></div>
         <div class="ide-editor-wrap">
-            <div id="ide-monaco"></div>
-            <textarea id="ide-fallback" spellcheck="false"></textarea>
+            <div class="ide-editor-container">
+                <div id="ide-monaco"></div>
+                <textarea id="ide-fallback" spellcheck="false"></textarea>
+            </div>
+            <div class="ide-terminal" id="ide-terminal" style="display:none">
+                <div class="ide-terminal-header">
+                    <span>Terminal</span>
+                    <div class="actions">
+                        <button onclick="clearTerminal()">&#128465;</button>
+                        <button onclick="toggleTerminal()">&#10005;</button>
+                    </div>
+                </div>
+                <div class="ide-terminal-output" id="terminal-output"></div>
+            </div>
         </div>
         <div class="ide-statusbar">
-            <span id="status-lang">Python</span>
-            <span id="status-info">Ln 1, Col 1</span>
+            <div class="ide-statusbar-left">
+                <button class="ide-run-btn" onclick="runCode()">&#9654; Run</button>
+                <button class="ide-poc-btn" onclick="generatePoC()">&#9889; Exploit PoC</button>
+            </div>
+            <div class="ide-statusbar-right">
+                <span id="status-lang">Python</span>
+                <span id="status-info">Ln 1, Col 1</span>
+            </div>
         </div>
     </div>
 
@@ -302,6 +334,69 @@
     function clearAnalysis() {
         document.getElementById("analysis-body").innerHTML = '<div class="ide-analysis-empty"><div class="empty-icon">&#128737;</div><p>Нажмите «Анализировать»<br>для проверки текущего файла</p></div>';
     }
+
+    window.toggleTerminal = function() {
+        var t = document.getElementById("ide-terminal");
+        t.style.display = t.style.display === "none" ? "flex" : "none";
+        if (editorReady && monacoEditor) setTimeout(function() { monacoEditor.layout(); }, 50);
+    };
+
+    window.clearTerminal = function() {
+        document.getElementById("terminal-output").textContent = "";
+    };
+
+    function appendTerminal(text, isError) {
+        var t = document.getElementById("ide-terminal");
+        if (t.style.display === "none") toggleTerminal();
+        var out = document.getElementById("terminal-output");
+        var span = document.createElement("span");
+        if (isError) span.style.color = "#f48771";
+        span.textContent = text + "\n";
+        out.appendChild(span);
+        out.scrollTop = out.scrollHeight;
+    }
+
+    window.runCode = async function() {
+        if (!activeFile) return;
+        if (editorReady && monacoEditor) files[activeFile] = monacoEditor.getValue();
+        var code = files[activeFile] || "";
+        if (!code.trim()) return;
+        var lang = getLang(activeFile);
+        
+        appendTerminal("> Выполнение " + activeFile + "...", false);
+        try {
+            var resp = await fetch("/api/sandbox/run", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: code, language: lang })
+            });
+            var data = await resp.json();
+            appendTerminal(data.output, data.error);
+        } catch (e) {
+            appendTerminal("Ошибка сети: " + e.message, true);
+        }
+    };
+
+    window.generatePoC = async function() {
+        if (!activeFile) return;
+        if (editorReady && monacoEditor) files[activeFile] = monacoEditor.getValue();
+        var code = files[activeFile] || "";
+        if (!code.trim()) return;
+        var lang = getLang(activeFile);
+        
+        appendTerminal("> Генерация PoC эксплойта для " + activeFile + "...", false);
+        try {
+            var resp = await fetch("/api/sandbox/poc", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: code, language: lang })
+            });
+            var data = await resp.json();
+            appendTerminal("\n--- PoC Exploit ---\n" + (data.poc || data.error) + "\n-------------------\n", false);
+        } catch (e) {
+            appendTerminal("Ошибка генерации: " + e.message, true);
+        }
+    };
 
     var sevBg = { CRITICAL: "rgba(255,76,76,0.15)", HIGH: "rgba(255,140,0,0.15)", MEDIUM: "rgba(243,156,18,0.15)", LOW: "rgba(52,152,219,0.15)", INFO: "rgba(107,107,107,0.15)" };
     var sevColors = { CRITICAL: "#FF4C4C", HIGH: "#FF8C00", MEDIUM: "#F39C12", LOW: "#3498DB", INFO: "#6B6B6B" };

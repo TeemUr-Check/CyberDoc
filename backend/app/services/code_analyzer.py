@@ -41,7 +41,7 @@ class CodeAnalyzer:
         payload = {
             "model": "codestral-latest",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 8192,
+            "max_tokens": 32768,
             "temperature": 0.1,
         }
         headers = {
@@ -72,3 +72,38 @@ class CodeAnalyzer:
         except Exception as exc:
             logger.error("Code analysis error: %s", exc)
             return {"vulnerabilities": [], "summary": f"Ошибка анализа: {exc}"}
+
+    async def generate_poc(self, code: str, language: str) -> str:
+        if not self._key:
+            return "MISTRAL_API_KEY не настроен."
+
+        prompt = (
+            f"Ты — эксперт по информационной безопасности. Проанализируй этот код на {language} "
+            "и напиши рабочий Proof of Concept (PoC) эксплойт, который демонстрирует уязвимость "
+            "в этом коде. Верни ТОЛЬКО код эксплойта (на Python или bash) с комментариями, "
+            "без лишних рассуждений.\n\nКод:\n```{language}\n{code}\n```"
+        )
+        payload = {
+            "model": "codestral-latest",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 32768,
+            "temperature": 0.2,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self._key}",
+        }
+        try:
+            async with httpx.AsyncClient(
+                timeout=self._timeout, verify=False, trust_env=False
+            ) as client:
+                resp = await client.post(
+                    "https://api.mistral.ai/v1/chat/completions",
+                    json=payload,
+                    headers=headers,
+                )
+                resp.raise_for_status()
+                return resp.json()["choices"][0]["message"]["content"].strip()
+        except Exception as exc:
+            logger.error("PoC generation error: %s", exc)
+            return f"Ошибка генерации PoC: {exc}"
