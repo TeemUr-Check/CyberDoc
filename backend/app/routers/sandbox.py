@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 import httpx
@@ -28,6 +29,33 @@ async def generate_poc(body: AnalyzeRequest, settings: Settings = Depends(get_se
 
 @router.post("/sandbox/run")
 async def run_code(body: AnalyzeRequest):
+    language = body.language.lower()
+
+    # Reliable local execution for Python (primary IDE scenario)
+    if language == "python":
+        try:
+            process = await asyncio.create_subprocess_exec(
+                "python3",
+                "-I",
+                "-c",
+                body.code,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=5.0)
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.communicate()
+                return {"output": "Ошибка выполнения: превышен лимит времени (5 секунд)", "error": True}
+
+            out_text = (stdout or b"").decode("utf-8", errors="replace").strip()
+            err_text = (stderr or b"").decode("utf-8", errors="replace").strip()
+            combined = "\n".join([x for x in (out_text, err_text) if x]).strip()
+            return {"output": combined or "Успешно выполнено (нет вывода)", "error": process.returncode != 0}
+        except Exception as e:
+            return {"output": f"Ошибка выполнения Python: {str(e)}", "error": True}
+
     # Map languages to Piston API format
     lang_map = {
         "python": ("python", "3.10.0"),
@@ -44,7 +72,7 @@ async def run_code(body: AnalyzeRequest):
         "shell": ("bash", "5.2.0")
     }
     
-    lang_info = lang_map.get(body.language.lower())
+    lang_info = lang_map.get(language)
     if not lang_info:
         return {"output": f"Язык {body.language} не поддерживается для выполнения.", "error": True}
         
@@ -61,17 +89,35 @@ async def run_code(body: AnalyzeRequest):
     }
     
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post("https://emacs.piston.rs/api/v2/execute", json=payload)
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.post("https://emkc.org/api/v2/piston/execute", json=payload)
             resp.raise_for_status()
             data = resp.json()
-            
-            output = ""
-            if "compile" in data and data["compile"].get("output"):
-                output += data["compile"]["output"] + "\n"
-            if "run" in data and data["run"].get("output"):
-                output += data["run"]["output"]
-                
-            return {"output": output.strip() or "Успешно выполнено (нет вывода)", "error": False}
+
+            output_parts = []
+            compile_data = data.get("compile") or {}
+            run_data = data.get("run") or {}
+
+            for key in ("output", "stdout", "stderr"):
+                value = compile_data.get(key)
+                if value:
+                    output_parts.append(str(value))
+
+            for key in ("output", "stdout", "stderr"):
+                value = run_data.get(key)
+                if value:
+                    output_parts.append(str(value))
+
+            return {
+                "output": "\n".join(output_parts).strip() or "Успешно выполнено (нет вывода)",
+                "error": (run_data.get("code", 0) != 0),
+            }
     except Exception as e:
-        return {"output": f"Ошибка выполнения: {str(e)}", "error": True}
+        return {
+            "output": (
+                "Внешний рантайм сейчас недоступен. "
+                "Для стабильного запуска используйте Python-файлы (.py). "
+                f"Техническая ошибка: {str(e)}"
+            ),
+            "error": True,
+        }

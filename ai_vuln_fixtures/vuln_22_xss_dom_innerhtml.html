@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<!-- INTENTIONALLY VULNERABLE — AI / training fixture only. -->
+<html>
+<body>
+<div id="out"></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  document.getElementById('out').innerHTML = q.get('msg') || '';
+</script>
+</body>
+</html>

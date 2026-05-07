@@ -23,7 +23,9 @@
         .ide-file-item:hover .ide-file-del{opacity:1}
         .ide-file-del:hover{color:var(--danger)}
         .ide-main{flex:1;display:flex;flex-direction:column;min-width:0}
-        .ide-tabs{display:flex;background:var(--dark);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+        .ide-tabs-row{display:flex;align-items:center;background:var(--dark);border-bottom:1px solid var(--border);flex-shrink:0}
+        .ide-tabs{display:flex;overflow-x:auto;flex:1;min-width:0}
+        .ide-top-actions{display:flex;align-items:center;gap:8px;padding:0 10px;flex-shrink:0}
         .ide-tab{display:flex;align-items:center;gap:8px;padding:10px 18px;font-size:12px;color:var(--text-muted);cursor:pointer;border-right:1px solid var(--border);white-space:nowrap;transition:var(--transition);font-family:'JetBrains Mono',monospace}
         .ide-tab:hover{color:var(--text-primary);background:var(--card)}
         .ide-tab.active{color:var(--yellow);background:var(--black);border-bottom:2px solid var(--yellow)}
@@ -35,19 +37,18 @@
         .ide-editor-container{flex:1;position:relative;min-height:0}
         #ide-monaco{width:100%;height:100%}
         #ide-fallback{display:none;width:100%;height:100%;background:var(--black);color:var(--text-primary);border:none;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6;resize:none;outline:none}
-        .ide-terminal{height:200px;background:#1e1e1e;border-top:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+        .ide-terminal{height:200px;min-height:120px;max-height:70vh;background:#1e1e1e;border-top:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;resize:vertical;overflow:auto}
         .ide-terminal-header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#252526;border-bottom:1px solid #333;font-size:11px;color:#ccc;text-transform:uppercase;letter-spacing:1px}
         .ide-terminal-header .actions{display:flex;gap:8px}
         .ide-terminal-header button{background:none;border:none;color:#ccc;cursor:pointer;font-size:12px}
         .ide-terminal-header button:hover{color:#fff}
         .ide-terminal-output{flex:1;padding:10px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:#d4d4d4;white-space:pre-wrap}
         .ide-terminal-output.error{color:#f48771}
-        .ide-statusbar{display:flex;align-items:center;justify-content:space-between;padding:4px 16px;background:var(--dark);border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);flex-shrink:0}
-        .ide-statusbar-left{display:flex;align-items:center;gap:12px}
+        .ide-statusbar{display:flex;align-items:center;justify-content:flex-end;padding:4px 16px;background:var(--dark);border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);flex-shrink:0}
         .ide-statusbar-right{display:flex;align-items:center;gap:12px}
-        .ide-run-btn{background:#2ea043;color:#fff;border:none;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+        .ide-run-btn{background:#2ea043;color:#fff;border:none;padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px}
         .ide-run-btn:hover{background:#3fb950}
-        .ide-poc-btn{background:#8957e5;color:#fff;border:none;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+        .ide-poc-btn{background:#8957e5;color:#fff;border:none;padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px}
         .ide-poc-btn:hover{background:#9e6aed}
         .ide-analysis-panel{width:380px;background:var(--dark);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
         .ide-analysis-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
@@ -68,6 +69,7 @@
         @media(max-width:768px){
             .ide-sidebar{display:none}
             .ide-layout{flex-direction:column;height:auto;min-height:calc(100vh - 64px)}
+            .ide-top-actions{padding:6px 8px}
         }
     </style>
 </head>
@@ -102,7 +104,13 @@
     </div>
 
     <div class="ide-main">
-        <div class="ide-tabs" id="tab-bar"></div>
+        <div class="ide-tabs-row">
+            <div class="ide-tabs" id="tab-bar"></div>
+            <div class="ide-top-actions">
+                <button class="ide-run-btn" onclick="runCode()">&#9654; Run</button>
+                <button class="ide-poc-btn" onclick="generatePoC()">&#9889; Exploit PoC</button>
+            </div>
+        </div>
         <div class="ide-editor-wrap">
             <div class="ide-editor-container">
                 <div id="ide-monaco"></div>
@@ -120,10 +128,6 @@
             </div>
         </div>
         <div class="ide-statusbar">
-            <div class="ide-statusbar-left">
-                <button class="ide-run-btn" onclick="runCode()">&#9654; Run</button>
-                <button class="ide-poc-btn" onclick="generatePoC()">&#9889; Exploit PoC</button>
-            </div>
             <div class="ide-statusbar-right">
                 <span id="status-lang">Python</span>
                 <span id="status-info">Ln 1, Col 1</span>
@@ -356,6 +360,19 @@
         out.scrollTop = out.scrollHeight;
     }
 
+    function getPocFileName(sourceFile, language) {
+        var extMap = {
+            python: "py", javascript: "js", typescript: "ts", go: "go",
+            rust: "rs", java: "java", c: "c", cpp: "cpp", php: "php",
+            ruby: "rb", shell: "sh", bash: "sh"
+        };
+        var base = sourceFile || "main.py";
+        var dot = base.lastIndexOf(".");
+        var stem = dot > 0 ? base.slice(0, dot) : base;
+        var ext = extMap[language] || "txt";
+        return stem + ".exploit_poc." + ext;
+    }
+
     window.runCode = async function() {
         if (!activeFile) return;
         if (editorReady && monacoEditor) files[activeFile] = monacoEditor.getValue();
@@ -371,7 +388,12 @@
                 body: JSON.stringify({ code: code, language: lang })
             });
             var data = await resp.json();
-            appendTerminal(data.output, data.error);
+            if (!resp.ok) {
+                appendTerminal("Ошибка API (" + resp.status + "): " + (data.detail || data.output || "Неизвестная ошибка"), true);
+                return;
+            }
+            var text = (data && typeof data.output === "string") ? data.output : JSON.stringify(data, null, 2);
+            appendTerminal(text || "Успешно выполнено (нет вывода)", !!data.error);
         } catch (e) {
             appendTerminal("Ошибка сети: " + e.message, true);
         }
@@ -392,7 +414,21 @@
                 body: JSON.stringify({ code: code, language: lang })
             });
             var data = await resp.json();
-            appendTerminal("\n--- PoC Exploit ---\n" + (data.poc || data.error) + "\n-------------------\n", false);
+            if (!resp.ok) {
+                appendTerminal("Ошибка API (" + resp.status + "): " + (data.detail || data.error || "Неизвестная ошибка"), true);
+                return;
+            }
+            var pocContent = (data && typeof data.poc === "string") ? data.poc : "";
+            if (!pocContent.trim()) {
+                appendTerminal("PoC не был сгенерирован", true);
+                return;
+            }
+            var pocFile = getPocFileName(activeFile, lang);
+            files[pocFile] = pocContent;
+            saveFiles();
+            renderFileList();
+            openFile(pocFile);
+            appendTerminal("PoC сохранен в файл: " + pocFile, false);
         } catch (e) {
             appendTerminal("Ошибка генерации: " + e.message, true);
         }
@@ -460,6 +496,13 @@
     function initMonaco() {
         var el = document.getElementById("ide-monaco");
         var fallback = document.getElementById("ide-fallback");
+        var terminalEl = document.getElementById("ide-terminal");
+        if (window.ResizeObserver && terminalEl) {
+            var ro = new ResizeObserver(function() {
+                if (editorReady && monacoEditor) monacoEditor.layout();
+            });
+            ro.observe(terminalEl);
+        }
         var script = document.createElement("script");
         script.src = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js";
         script.onload = function() {

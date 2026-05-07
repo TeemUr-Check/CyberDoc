@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<!-- INTENTIONALLY VULNERABLE — AI / training fixture only. XXE pattern in consuming parsers -->
+<!DOCTYPE data [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<root><item>&xxe;</item></root>
